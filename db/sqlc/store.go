@@ -97,31 +97,14 @@ func (store *Store) TransferTx(ctx context.Context, arg TransferTxParams) (Trans
 		}
 
 		if arg.FromAccountID < arg.ToAccountID {
-			result.FromAccount, err = store.UpdateAcount(ctx, UpdateAcountParams{
-				ID:      arg.FromAccountID,
-				Balance: account1.Balance - arg.Amount,
-			})
+			result.FromAccount, result.ToAccount, err = AddMoney(ctx, arg.FromAccountID, arg.ToAccountID, account1.Balance, account2.Balance, arg.Amount)
+
 			if err != nil {
 				return err
 			}
 
-			result.ToAccount, err = store.UpdateAcount(ctx, UpdateAcountParams{
-				ID:      arg.ToAccountID,
-				Balance: account2.Balance + arg.Amount,
-			})
 		} else {
-			result.ToAccount, err = store.UpdateAcount(ctx, UpdateAcountParams{
-				ID:      arg.ToAccountID,
-				Balance: account2.Balance + arg.Amount,
-			})
-			if err != nil {
-				return err
-			}
-
-			result.FromAccount, err = store.UpdateAcount(ctx, UpdateAcountParams{
-				ID:      arg.FromAccountID,
-				Balance: account1.Balance - arg.Amount,
-			})
+			result.ToAccount, result.FromAccount, err = AddMoney(ctx, arg.ToAccountID, arg.FromAccountID, account2.Balance, account1.Balance, arg.Amount)
 			if err != nil {
 				return err
 			}
@@ -129,4 +112,29 @@ func (store *Store) TransferTx(ctx context.Context, arg TransferTxParams) (Trans
 		return err
 	})
 	return result, err
+}
+
+func AddMoney(ctx context.Context, FromAccountId int64, ToAccountId int64, Balance1 int64, Balance2 int64, Amount int64) (Account, Account, error) {
+	store := NewStore(ctx.Value("db").(*sql.DB))
+
+	account1, err := store.UpdateAcount(ctx, UpdateAcountParams{
+		ID:      FromAccountId,
+		Balance: Balance1 - Amount,
+	})
+
+	if err != nil {
+		return Account{}, Account{}, err
+	}
+
+	var account2 Account
+	account2, err = store.UpdateAcount(ctx, UpdateAcountParams{
+		ID:      ToAccountId,
+		Balance: Balance2 + Amount,
+	})
+
+	if err != nil {
+		return Account{}, Account{}, err
+	}
+
+	return account1, account2, nil
 }
