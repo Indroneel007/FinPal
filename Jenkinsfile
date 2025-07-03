@@ -5,18 +5,20 @@ pipeline {
         git 'DefaultGit' // match the name you configured
     }
 
-
+    stages {
+                
         stage('Build') {
             steps {
                 bat 'make build'
             }
         }
 
-        stage('Run Tests') {
+        stage('Test') {
             steps {
                 bat 'make test'
             }
         }
+    }
     
 
     post {
