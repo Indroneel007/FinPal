@@ -17,7 +17,7 @@ pipeline {
                 bat 'make test'
             }
         }
-    }
+    
 
     post {
         always {
