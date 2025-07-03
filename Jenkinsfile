@@ -9,7 +9,7 @@ pipeline {
                 
         stage('Build') {
             steps {
-                bat 'make build'
+                bat 'go build -o bin/app.exe .'
             }
         }
 
