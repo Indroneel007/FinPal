@@ -6,21 +6,19 @@ pipeline {
     }
 
     stages {
-                
         stage('Build') {
             steps {
-                bat 'mkdir bin'
-                bat 'go build -o bin/app.exe .'
+                sh 'mkdir -p bin'
+                sh 'go build -o bin/app .'
             }
         }
 
         stage('Test') {
             steps {
-                bat 'make test'
+                sh 'make test'
             }
         }
     }
-    
 
     post {
         always {
@@ -28,3 +26,4 @@ pipeline {
         }
     }
 }
+
