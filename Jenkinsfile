@@ -6,6 +6,27 @@ pipeline {
     }
 
     stages {
+        stage('Debug Environment') {
+            steps {
+                sh '''
+                    echo "Go Version:"
+                    go version
+
+                    echo "Environment Variables:"
+                    printenv
+
+                    echo "Working Directory Contents:"
+                    ls -al
+                '''
+            }
+        }
+
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
         stage('Build') {
             steps {
                 sh 'mkdir -p bin'
@@ -15,6 +36,7 @@ pipeline {
 
         stage('Test') {
             steps {
+                sh 'go mod tidy'
                 sh 'make test'
             }
         }
