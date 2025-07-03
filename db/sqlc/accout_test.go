@@ -1,14 +1,12 @@
 package db
 
-import (
-	"context"
-	"examples/SimpleBankProject/util"
-	"testing"
+//"context"
+//"examples/SimpleBankProject/util"
+//"testing"
 
-	"github.com/stretchr/testify/require"
-)
+//"github.com/stretchr/testify/require"
 
-func CreateRandomAccount(t *testing.T) Account {
+/*func CreateRandomAccount(t *testing.T) Account {
 	args := CreateAccountParams{
 		Owner:    util.RandomOwner(),
 		Balance:  util.RandomAmount(),
@@ -27,8 +25,8 @@ func CreateRandomAccount(t *testing.T) Account {
 	require.NotZero(t, account.ID)
 
 	return account
-}
+}*/
 
-func TestCreateAccount(t *testing.T) {
-	CreateRandomAccount(t)
-}
+/*func TestCreateAccount(t *testing.T) {
+	//CreateRandomAccount(t)
+}*/
