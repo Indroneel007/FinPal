@@ -5,12 +5,6 @@ pipeline {
         git 'DefaultGit' // match the name you configured
     }
 
-    stages {
-        stage('Tidy Modules') {
-            steps {
-                bat 'make tidy'
-            }
-        }
 
         stage('Build') {
             steps {
