@@ -8,18 +8,15 @@ pipeline {
             }
         }
 
-        stage('Run Tests') {
+        stage('Build') {
             steps {
-                bat 'make test'
+                bat 'make build'
             }
         }
 
-        stage('Build (optional)') {
-            when {
-                expression { fileExists('main.go') }
-            }
+        stage('Run Tests') {
             steps {
-                bat 'make build'
+                bat 'make test'
             }
         }
     }
