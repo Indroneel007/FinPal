@@ -2,7 +2,7 @@ package db
 
 import (
 	"context"
-	"fmt"
+	//"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -22,10 +22,10 @@ func TestTransferTx(t *testing.T) {
 	results := make(chan TransferTxResult)
 
 	for i := 0; i < n; i++ {
-		txName := fmt.Sprintf("tx %d", i+1)
+		//txName := fmt.Sprintf("tx %d", i+1)
 		go func() {
-			ctx := context.WithValue(context.Background(), txKey, txName)
-			result, err := store.TransferTx(ctx, TransferTxParams{
+			//ctx := context.WithValue(context.Background())
+			result, err := store.TransferTx(context.Background(), TransferTxParams{
 				FromAccountID: account1.ID,
 				ToAccountID:   account2.ID,
 				Amount:        amount,
@@ -79,16 +79,16 @@ func TestTransferTx(t *testing.T) {
 		require.True(t, diff1 > 0)
 		require.True(t, diff1%amount == 0)
 
-		/*k := int(diff1 / amount)
+		k := int(diff1 / amount)
 		require.True(t, k >= 1 && k <= n)
-		require.NotContains(t, existed, k)
-		//existed[k+1] = true*/
+		//require.NotContains(t, existed, k)
+		//existed[k+1] = true
 	}
 
-	updatedAccount1, err := testQueries.GetAccount(context.Background(), account1.ID)
+	updatedAccount1, err := testQueries.GetAccountForUpdate(context.Background(), account1.ID)
 	require.NoError(t, err)
 
-	updatedAccount2, err := testQueries.GetAccount(context.Background(), account2.ID)
+	updatedAccount2, err := testQueries.GetAccountForUpdate(context.Background(), account2.ID)
 	require.NoError(t, err)
 
 	require.Equal(t, account1.Balance-int64(n)*amount, updatedAccount1.Balance)
