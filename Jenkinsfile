@@ -9,6 +9,7 @@ pipeline {
                 
         stage('Build') {
             steps {
+                bat 'mkdir bin'
                 bat 'go build -o bin/app.exe .'
             }
         }
