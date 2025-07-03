@@ -1,6 +1,10 @@
 pipeline {
     agent any
 
+    tools {
+        git 'DefaultGit' // match the name you configured
+    }
+
     stages {
         stage('Tidy Modules') {
             steps {
