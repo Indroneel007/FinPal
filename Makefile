@@ -25,4 +25,7 @@ tidy:
 build:
 	go build -o bin/app.exe ./...
 
-.PHONY: postgres createdb dropdb migrateup migratedown sqlc test tidy build
+server:
+	go run main.go
+
+.PHONY: postgres createdb dropdb migrateup migratedown sqlc test tidy build server
