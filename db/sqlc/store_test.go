@@ -2,16 +2,18 @@ package db
 
 import (
 	"context"
-	//"fmt"
 	"examples/SimpleBankProject/util"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 )
 
 func CreateRandomAccount(t *testing.T) Account {
+	user := CreateRandomUser(t)
+
 	args := CreateAccountParams{
-		Owner:    util.RandomOwner(),
+		Owner:    user.Username,
 		Balance:  util.RandomAmount(),
 		Currency: util.RandomCurrency(),
 	}
@@ -26,6 +28,7 @@ func CreateRandomAccount(t *testing.T) Account {
 
 	require.NotZero(t, account.CreatedAt)
 	require.NotZero(t, account.ID)
+	fmt.Printf("Created account: %v\n", account.ID)
 
 	return account
 }
@@ -52,6 +55,9 @@ func TestTransferTx(t *testing.T) {
 				ToAccountID:   account2.ID,
 				Amount:        amount,
 			})
+
+			fmt.Printf("Transfer %d: %v\n", i+1, result.FromEntry.AccountID)
+
 			errs <- err
 			results <- result
 		}()
@@ -76,6 +82,8 @@ func TestTransferTx(t *testing.T) {
 		_, err = store.GetTransfer(context.Background(), transfer.ID)
 		require.NoError(t, err)
 
+		fmt.Printf("Transfer ID: %d, From: %d\n", transfer.ID, transfer.FromAccountID)
+
 		fromEntry := result.FromEntry
 		require.NotEmpty(t, fromEntry)
 		require.Equal(t, account1.ID, fromEntry.AccountID)
@@ -83,7 +91,9 @@ func TestTransferTx(t *testing.T) {
 		require.NotZero(t, fromEntry.ID)
 		require.NotZero(t, fromEntry.CreatedAt)
 
-		_, err = store.GetTransfer(context.Background(), fromEntry.AccountID)
+		fmt.Printf("From Entry ID: %d, Account ID: %d\n", fromEntry.ID, fromEntry.AccountID)
+
+		_, err = store.GetEntry(context.Background(), fromEntry.AccountID)
 		require.NoError(t, err)
 
 		fromAccount := result.FromAccount
