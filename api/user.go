@@ -1,0 +1,185 @@
+package api
+
+import (
+	db "examples/SimpleBankProject/db/sqlc"
+	"examples/SimpleBankProject/util"
+	"net/http"
+	"strings"
+	"time"
+
+	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
+	"github.com/o1egl/paseto"
+	"github.com/spf13/viper"
+)
+
+type userRegisterRequest struct {
+	Username string `json:"username" binding:"required,alphanum,min=3,max=20"`
+	Password string `json:"password" binding:"required"`
+	FullName string `json:"full_name" binding:"required"`
+	Email    string `json:"email" binding:"required,email"`
+}
+
+type getUserRequest struct {
+	username string `uri:"username" binding:"required,alphanum,min=3,max=20"`
+}
+
+type userLoginRequest struct {
+	Username string `json:"username" binding:"required"`
+	Password string `json:"password" binding:"required"`
+}
+
+type userResponse struct {
+	Username          string    `json:"username"`
+	FullName          string    `json:"full_name"`
+	Email             string    `json:"email"`
+	PasswordChangedAt time.Time `json:"password_changed_at"`
+	CreatedAt         time.Time `json:"created_at"`
+}
+
+type loginUserResponse struct {
+	AccessToken string       `json:"access_token"`
+	User        userResponse `json:"user"`
+}
+
+func UserResponse(user db.User) userResponse {
+	return userResponse{
+		Username:          user.Username,
+		FullName:          user.FullName,
+		Email:             user.Email,
+		PasswordChangedAt: user.PasswordChangedAt,
+		CreatedAt:         user.CreatedAt,
+	}
+}
+
+func (s *Server) createUser(c *gin.Context) {
+	var req userRegisterRequest
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, NewError(err))
+		return
+	}
+
+	password, err := util.HashPassword(req.Password)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, NewError(err))
+		return
+	}
+
+	p := db.CreateUserParams{
+		Username:       req.Username,
+		HashedPassword: password,
+		FullName:       req.FullName,
+		Email:          req.Email,
+	}
+
+	user, err := s.store.CreateUser(c, p)
+	if err != nil {
+		if apiErr := convertToApiErr(err); apiErr != nil {
+			c.JSON(http.StatusUnprocessableEntity, NewValidationError(apiErr))
+			return
+		}
+		c.JSON(http.StatusInternalServerError, NewError(err))
+		return
+	}
+
+	res := UserResponse(user)
+
+	c.JSON(http.StatusOK, res)
+}
+
+func (s *Server) getUser(c *gin.Context) {
+	var req getUserRequest
+
+	if err := c.ShouldBindUri(&req); err != nil {
+		c.JSON(http.StatusBadRequest, NewError(err))
+		return
+	}
+
+	username := req.username
+
+	user, err := s.store.GetUser(c, username)
+	if err != nil {
+		if apiErr := convertToApiErr(err); apiErr != nil {
+			c.JSON(http.StatusUnprocessableEntity, NewValidationError(apiErr))
+			return
+		}
+		c.JSON(http.StatusInternalServerError, NewError(err))
+		return
+	}
+
+	c.JSON(http.StatusOK, user)
+}
+
+func (s *Server) loginUser(c *gin.Context) {
+	err := godotenv.Load()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, NewError(err))
+		return
+	}
+	viper.AutomaticEnv()
+	secret := viper.GetString("TOKEN_SECRET")
+	if secret == "" {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "TOKEN_SECRET is not set in the environment variables"})
+		return
+	}
+	duration := viper.GetDuration("TOKEN_DURATION")
+	if duration == 0 {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "TOKEN_DURATION is not set in the environment variables"})
+		return
+	}
+
+	var req userLoginRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, NewError(err))
+		return
+	}
+	var field string
+	field = "username"
+
+	if strings.Contains(req.Username, "@") {
+		field = "email"
+	}
+
+	var user db.User
+	//var err error
+
+	if field == "username" {
+		user, err = s.store.GetUser(c, req.Username)
+	} else {
+		user, err = s.store.GetUserByEmail(c, req.Username)
+	}
+
+	if err != nil {
+		if apiErr := convertToApiErr(err); apiErr != nil {
+			c.JSON(http.StatusUnprocessableEntity, NewValidationError(apiErr))
+			return
+		}
+		c.JSON(http.StatusInternalServerError, NewError(err))
+		return
+	}
+
+	if !util.CheckPasswordHash(req.Password, user.HashedPassword) {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid credentials"})
+		return
+	}
+
+	var maker = &PasetoMaker{
+		paseto:       paseto.NewV2(),
+		symmetricKey: []byte(secret),
+	}
+
+	token, err := maker.CreateToken(user.Username, duration)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, NewError(err))
+		return
+	}
+
+	res := loginUserResponse{
+		AccessToken: token,
+		User:        UserResponse(user),
+	}
+
+	c.JSON(http.StatusOK, res)
+}
