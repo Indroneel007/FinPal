@@ -3,6 +3,7 @@ package api
 import (
 	//"errors"
 	db "examples/SimpleBankProject/db/sqlc"
+	"examples/SimpleBankProject/util"
 	"fmt"
 	"net/http"
 
@@ -10,8 +11,6 @@ import (
 )
 
 type accountRequest struct {
-	Owner    string `json:"owner" binding:"required"`
-	Balance  int64  `json:"balance" binding:"required,min=0"`     // Ensure balance is non-negative
 	Currency string `json:"currency" binding:"required,currency"` // Use custom validator for currency
 }
 
@@ -39,9 +38,21 @@ func (s *Server) createAccount(c *gin.Context) {
 		return
 	}
 
+	payloadData, exists := c.Get(authorizationPayloadKey)
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Authorization payload not found"})
+		return
+	}
+
+	payload, ok := payloadData.(*util.Payload)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid authorization payload"})
+		return
+	}
+
 	p := db.CreateAccountParams{
-		Owner:    req.Owner,
-		Balance:  req.Balance,
+		Owner:    payload.Username,
+		Balance:  0,
 		Currency: req.Currency,
 	}
 
@@ -82,6 +93,23 @@ func (s *Server) getAccount(c *gin.Context) {
 		return
 	}
 
+	payloadData, exists := c.Get(authorizationPayloadKey)
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Authorization payload not found"})
+		return
+	}
+
+	payload, ok := payloadData.(*util.Payload)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid authorization payload"})
+		return
+	}
+
+	if account.Owner != payload.Username {
+		c.JSON(http.StatusForbidden, gin.H{"error": "You do not have permission to access this account"})
+		return
+	}
+
 	c.JSON(http.StatusOK, account)
 }
 
@@ -93,7 +121,20 @@ func (s *Server) listAccounts(c *gin.Context) {
 		return
 	}
 
-	accounts, err := s.store.ListAccounts(c, db.ListAccountsParams{
+	payloadData, exists := c.Get(authorizationPayloadKey)
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Authorization payload not found"})
+		return
+	}
+
+	payload, ok := payloadData.(*util.Payload)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid authorization payload"})
+		return
+	}
+
+	accounts, err := s.store.ListAccountsByOwner(c, db.ListAccountsByOwnerParams{
+		Owner:  payload.Username,
 		Limit:  req.PageSize,
 		Offset: (req.PageID - 1) * req.PageSize,
 	})
@@ -115,6 +156,35 @@ func (s *Server) createTransfer(c *gin.Context) {
 
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, NewError(err))
+		return
+	}
+
+	payloadInterface, exists := c.Get("authorization_payload")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "authorization payload not found"})
+		return
+	}
+
+	payload, ok := payloadInterface.(*util.Payload)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid authorization payload"})
+		return
+	}
+
+	fromAccount, err := s.store.GetAccount(c, req.FromAccountID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "from account not found"})
+		return
+	}
+
+	if fromAccount.Owner != payload.Username {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "you do not own the source account"})
+		return
+	}
+
+	_, err = s.store.GetAccount(c, req.ToAccountID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "destination account not found"})
 		return
 	}
 

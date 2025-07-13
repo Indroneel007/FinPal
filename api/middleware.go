@@ -1,89 +1,57 @@
 package api
 
 import (
-	"fmt"
-	"time"
+	"examples/SimpleBankProject/util"
+	"net/http"
+	"strings"
 
-	"github.com/google/uuid"
-	"github.com/o1egl/paseto"
-	"golang.org/x/crypto/chacha20poly1305"
+	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
+	"github.com/spf13/viper"
 )
 
-type Payload struct {
-	ID        uuid.UUID `json:"id"`
-	Username  string    `json:"username"`
-	IssuedAt  time.Time `json:"issued_at"`
-	ExpiredAt time.Time `json:"expired_at"`
-}
+const (
+	authorizationHeaderKey        = "Authorization"
+	authorizationHeaderBearerType = "bearer"
+	authorizationPayloadKey       = "authorization_payload"
+)
 
-type Maker interface {
-	CreateToken(username string, duration time.Duration) (string, error)
-	VerifyToken(token string, duration time.Duration) (*Payload, error)
-}
-
-type PasetoMaker struct {
-	paseto       *paseto.V2
-	symmetricKey []byte
-}
-
-func NewPasetoMaker(symmetricKey string) (Maker, error) {
-	if len(symmetricKey) != chacha20poly1305.KeySize {
-		return nil, fmt.Errorf("invalid symmetric key size: must be exactly %d bytes, got %d bytes", chacha20poly1305.KeySize, len(symmetricKey))
-	}
-
-	maker := &PasetoMaker{
-		paseto:       paseto.NewV2(),
-		symmetricKey: []byte(symmetricKey),
-	}
-
-	return maker, nil
-}
-
-func NewPayload(username string, duration time.Duration) (*Payload, error) {
-	tokenId, err := uuid.NewRandom()
+func AuthMiddleware(tokenMaker util.Maker) gin.HandlerFunc {
+	err := godotenv.Load()
 	if err != nil {
-		return nil, err
+		panic("Error loading .env file: " + err.Error())
 	}
 
-	payload := &Payload{
-		ID:        tokenId,
-		Username:  username,
-		IssuedAt:  time.Now(),
-		ExpiredAt: time.Now().Add(duration),
+	viper.AutomaticEnv()
+
+	return func(c *gin.Context) {
+		duration := viper.GetDuration("TOKEN_DURATION")
+		if duration == 0 {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "TOKEN_DURATION is not set in the environment variables"})
+			return
+		}
+
+		authorizationHeader := c.GetHeader(authorizationHeaderKey)
+
+		if authorizationHeader == "" {
+			c.AbortWithStatusJSON(401, gin.H{"error": "Authorization header is required"})
+			return
+		}
+
+		fields := strings.Fields(authorizationHeader)
+		if len(fields) < 2 || strings.ToLower(fields[0]) != authorizationHeaderBearerType {
+			c.AbortWithStatusJSON(401, gin.H{"error": "Invalid authorization header format"})
+			return
+		}
+
+		token := fields[1]
+		payload, err := tokenMaker.VerifyToken(token, duration)
+		if err != nil {
+			c.AbortWithStatusJSON(401, gin.H{"error": "Invalid or expired token"})
+			return
+		}
+
+		c.Set(authorizationPayloadKey, payload)
+		c.Next()
 	}
-
-	return payload, nil
-}
-
-func (maker *PasetoMaker) CreateToken(username string, duration time.Duration) (string, error) {
-	payload, err := NewPayload(username, duration)
-	if err != nil {
-		return "", err
-	}
-
-	token, err := maker.paseto.Encrypt(maker.symmetricKey, payload, nil)
-	if err != nil {
-		return "", err
-	}
-
-	return token, nil
-}
-
-func (maker *PasetoMaker) VerifyToken(token string, duration time.Duration) (*Payload, error) {
-	payload := &Payload{}
-
-	err := maker.paseto.Decrypt(token, maker.symmetricKey, payload, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	if time.Now().After(payload.ExpiredAt) {
-		return nil, fmt.Errorf("token has expired")
-	}
-
-	if time.Now().Before(payload.IssuedAt) {
-		return nil, fmt.Errorf("token is not valid yet")
-	}
-
-	return payload, nil
 }

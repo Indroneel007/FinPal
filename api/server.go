@@ -2,6 +2,7 @@ package api
 
 import (
 	db "examples/SimpleBankProject/db/sqlc"
+	"examples/SimpleBankProject/util"
 	"fmt"
 
 	//"os"
@@ -14,7 +15,7 @@ import (
 
 type Server struct {
 	store      *db.Store
-	tokenMaker Maker
+	tokenMaker util.Maker
 	router     *gin.Engine
 }
 
@@ -30,7 +31,7 @@ func NewServer(store *db.Store) (*Server, error) {
 		return nil, fmt.Errorf("TOKEN_SECRET is not set in the environment variables")
 	}
 
-	tokenMaker, err := NewPasetoMaker(secret)
+	tokenMaker, err := util.NewPasetoMaker(secret)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create token maker: %v", err)
 	}
@@ -49,17 +50,18 @@ func NewServer(store *db.Store) (*Server, error) {
 }
 
 func (s *Server) MountHandlers() {
-	api := s.router.Group("/api")
+	api := s.router.Group("/")
+	authRoute := s.router.Group("/").Use(AuthMiddleware(s.tokenMaker))
 
-	api.POST("/accounts", s.createAccount)
-	api.GET("/accounts/:id", s.getAccount)
-	api.GET("/accounts", s.listAccounts)
-	api.POST("/transfers", s.createTransfer)
+	authRoute.POST("/accounts", s.createAccount)
+	authRoute.GET("/accounts/:id", s.getAccount)
+	authRoute.GET("/accounts", s.listAccounts)
+	authRoute.POST("/transfers", s.createTransfer)
 
 	api.GET("/tests", s.TestRoute)
 
 	api.POST("/register", s.createUser)
-	api.GET("/user/:username", s.getUser)
+	authRoute.GET("/user/:username", s.getUser)
 	api.POST("/login", s.loginUser)
 }
 

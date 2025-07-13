@@ -165,9 +165,10 @@ func (s *Server) loginUser(c *gin.Context) {
 		return
 	}
 
-	var maker = &PasetoMaker{
-		paseto:       paseto.NewV2(),
-		symmetricKey: []byte(secret),
+	//var pasetoMaker = util.PasetoMaker{}
+	var maker = &util.PasetoMaker{
+		Paseto:       paseto.NewV2(),
+		SymmetricKey: []byte(secret),
 	}
 
 	token, err := maker.CreateToken(user.Username, duration)
