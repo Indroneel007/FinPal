@@ -8,6 +8,7 @@ import (
 
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
+	"github.com/spf13/viper"
 )
 
 var testQueries *Queries
@@ -26,7 +27,9 @@ func TestMain(m *testing.M) {
 		log.Fatal("Error loading .env file:", err)
 	}
 
-	dbSource := os.Getenv("dbSource")
+	viper.AutomaticEnv()
+
+	dbSource := viper.GetString("dbSource")
 	if dbSource == "" {
 		log.Fatal("dbSource is not set in the environment variables")
 	}
