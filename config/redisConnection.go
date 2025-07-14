@@ -26,10 +26,18 @@ var ctx = context.Background()
 var Redis *RedisCache
 
 func SetupRedisCache() *RedisCache {
-	err := godotenv.Load()
+	/*err := godotenv.Load()
 	if err != nil {
 		log.Fatalf("Error loading .env file: %v", err)
+	}*/
+	paths := []string{".env", "../.env", "../../.env"}
+	for _, path := range paths {
+		if err := godotenv.Load(path); err == nil {
+			break
+		}
 	}
+
+	var err error
 
 	viper.AutomaticEnv()
 

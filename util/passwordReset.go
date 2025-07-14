@@ -93,11 +93,20 @@ func SendOTPEmail(otp, recepient string) error {
 
 	return nil*/
 
-	err := godotenv.Load()
+	/*err := godotenv.Load()
 	if err != nil {
 		log.Println("Error loading .env:", err)
 		return err
+	}*/
+
+	paths := []string{".env", "../.env", "../../.env"}
+	for _, path := range paths {
+		if err := godotenv.Load(path); err == nil {
+			break
+		}
 	}
+
+	var err error
 
 	viper.AutomaticEnv()
 

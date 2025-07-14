@@ -20,13 +20,20 @@ const (
 )
 
 func TestMain(m *testing.M) {
-	var err error
 
-	err = godotenv.Load()
+	/*err = godotenv.Load()
 	if err != nil {
 		log.Fatal("Error loading .env file:", err)
+	}*/
+
+	paths := []string{".env", "../.env", "../../.env"}
+	for _, path := range paths {
+		if err := godotenv.Load(path); err == nil {
+			break
+		}
 	}
 
+	var err error
 	viper.AutomaticEnv()
 
 	dbSource := viper.GetString("dbSource")

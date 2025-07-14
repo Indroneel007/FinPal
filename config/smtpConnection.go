@@ -15,10 +15,17 @@ import (
 var SMTPClient *smtp.Client
 
 func SMTPConnection() {
-	err := godotenv.Load()
+	/*err := godotenv.Load()
 	if err != nil {
 		fmt.Println("Error loading .env file in SMTP connection:", err)
 		return
+	}*/
+
+	paths := []string{".env", "../.env", "../../.env"}
+	for _, path := range paths {
+		if err := godotenv.Load(path); err == nil {
+			break
+		}
 	}
 
 	viper.AutomaticEnv()

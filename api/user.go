@@ -136,11 +136,20 @@ func (s *Server) getUser(c *gin.Context) {
 }
 
 func (s *Server) loginUser(c *gin.Context) {
-	err := godotenv.Load()
+	/*err := godotenv.Load()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, NewError(err))
 		return
+	}*/
+	paths := []string{".env", "../.env", "../../.env"}
+	for _, path := range paths {
+		if err := godotenv.Load(path); err == nil {
+			break
+		}
 	}
+
+	var err error
+
 	viper.AutomaticEnv()
 	secret := viper.GetString("TOKEN_SECRET")
 	if secret == "" {

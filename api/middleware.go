@@ -17,9 +17,11 @@ const (
 )
 
 func AuthMiddleware(tokenMaker util.Maker) gin.HandlerFunc {
-	err := godotenv.Load()
-	if err != nil {
-		panic("Error loading .env file: " + err.Error())
+	paths := []string{".env", "../.env", "../../.env"}
+	for _, path := range paths {
+		if err := godotenv.Load(path); err == nil {
+			break
+		}
 	}
 
 	viper.AutomaticEnv()

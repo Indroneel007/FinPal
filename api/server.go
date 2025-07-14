@@ -22,9 +22,16 @@ type Server struct {
 }
 
 func NewServer(store *db.Store, redisClient *redis.Client) (*Server, error) {
-	err := godotenv.Load()
+	/*err := godotenv.Load()
 	if err != nil {
 		return nil, fmt.Errorf("error loading .env file: %v", err)
+	}*/
+
+	paths := []string{".env", "../.env", "../../.env"}
+	for _, path := range paths {
+		if err := godotenv.Load(path); err == nil {
+			break
+		}
 	}
 
 	viper.AutomaticEnv()
