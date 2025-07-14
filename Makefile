@@ -1,6 +1,9 @@
 postgres:
 	docker run --name some-postgres -p 5433:5432 -e POSTGRES_USER=root -e POSTGRES_PASSWORD=secret -d postgres:18beta1-alpine
 
+redis:
+	docker run -d --name redis -p 6379:6379 redis:8.0
+
 createdb:
 	docker exec -it some-postgres createdb --username=root --owner=root simple_bank_2
 
@@ -28,4 +31,4 @@ build:
 server:
 	go run main.go
 
-.PHONY: postgres createdb dropdb migrateup migratedown sqlc test tidy build server
+.PHONY: postgres createdb dropdb migrateup migratedown sqlc test tidy build server redis

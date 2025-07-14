@@ -9,6 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
 	"github.com/go-playground/validator/v10"
+	"github.com/go-redis/redis/v8"
 	"github.com/joho/godotenv"
 	"github.com/spf13/viper"
 )
@@ -17,9 +18,10 @@ type Server struct {
 	store      *db.Store
 	tokenMaker util.Maker
 	router     *gin.Engine
+	redis      *redis.Client
 }
 
-func NewServer(store *db.Store) (*Server, error) {
+func NewServer(store *db.Store, redisClient *redis.Client) (*Server, error) {
 	err := godotenv.Load()
 	if err != nil {
 		return nil, fmt.Errorf("error loading .env file: %v", err)
@@ -40,6 +42,7 @@ func NewServer(store *db.Store) (*Server, error) {
 		store:      store,
 		tokenMaker: tokenMaker,
 		router:     gin.Default(),
+		redis:      redisClient,
 	}
 
 	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
@@ -50,19 +53,21 @@ func NewServer(store *db.Store) (*Server, error) {
 }
 
 func (s *Server) MountHandlers() {
-	api := s.router.Group("/")
-	authRoute := s.router.Group("/").Use(AuthMiddleware(s.tokenMaker))
+	public := s.router.Group("/")
+	auth := s.router.Group("/").Use(AuthMiddleware(s.tokenMaker))
 
-	authRoute.POST("/accounts", s.createAccount)
-	authRoute.GET("/accounts/:id", s.getAccount)
-	authRoute.GET("/accounts", s.listAccounts)
-	authRoute.POST("/transfers", s.createTransfer)
+	// ✅ Public routes (no auth)
+	public.POST("/register", s.createUser)
+	public.GET("/tests", s.TestRoute)
+	public.POST("/forgotpassword", s.forgotPassword)
+	public.POST("/login", s.loginUser)
 
-	api.GET("/tests", s.TestRoute)
-
-	api.POST("/register", s.createUser)
-	authRoute.GET("/user/:username", s.getUser)
-	api.POST("/login", s.loginUser)
+	// ✅ Authenticated routes
+	auth.POST("/accounts", s.createAccount)
+	auth.GET("/accounts", s.listAccounts)
+	auth.GET("/accounts/:id", s.getAccount)
+	auth.GET("/user/:username", s.getUser)
+	auth.POST("/transfers", s.createTransfer)
 }
 
 func (server *Server) Start(address string) error {
