@@ -9,6 +9,8 @@ on:
 jobs:
 
   test:
+    env:
+      dbSource: "postgresql://root:rootpassword@localhost:5433/simple_bank?sslmode=disable"
     name: Test
     runs-on: ubuntu-latest
 
