@@ -14,3 +14,9 @@ WHERE username = $1 LIMIT 1;
 -- name: GetUserByEmail :one
 SELECT * FROM users
 WHERE email = $1 LIMIT 1;
+
+-- name: UpdateUserPassword :one
+UPDATE users
+SET hashed_password = $2
+WHERE username = $1
+RETURNING *;

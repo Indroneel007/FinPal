@@ -9,7 +9,7 @@ const (
 	authTokenExp       = time.Minute * 15
 	refreshTokenExp    = time.Hour * 24 * 30
 	blacklistKeyPrefix = "blacklisted:"
-	otpKeyPrefix       = "password-reset:"
+	OtpKeyPrefix       = "password-reset:"
 	otpExp             = time.Minute * 10
 	otpCharSet         = "1234567890"
 	emailTemplate      = "To: %s\r\n" +

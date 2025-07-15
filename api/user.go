@@ -48,6 +48,14 @@ type forgotPasswordRequest struct {
 	Email string `json:"email" binding:"required,email"`
 }
 
+type checkOtpRequest struct {
+	OTP string `json:"otp" binding:"required"`
+}
+
+type resetPasswordRequest struct {
+	NewPassword string `json:"new_password" binding:"required"`
+}
+
 func UserResponse(user db.User) userResponse {
 	return userResponse{
 		Username:          user.Username,
@@ -266,15 +274,169 @@ func (s *Server) forgotPassword(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Password reset link sent to " + user.Email})
-
-	//otp := "123456" // dummy otp for now
-	/*err = s.redis.Set(c, "otp:"+user.Email, otp, 10*time.Minute).Err()
-	if err != nil {
-		log.Println(">>> Redis SET error:", err)
-		c.JSON(500, gin.H{"error": "redis error"})
+	secret := viper.GetString("TOKEN_SECRET")
+	if secret == "" {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "TOKEN_SECRET is not set in the environment variables"})
+		return
+	}
+	duration := viper.GetDuration("TOKEN_DURATION")
+	if duration == 0 {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "TOKEN_DURATION is not set in the environment variables"})
 		return
 	}
 
-	c.JSON(200, gin.H{"message": "OTP sent"})*/
+	var maker = &util.PasetoMaker{
+		Paseto:       paseto.NewV2(),
+		SymmetricKey: []byte(secret),
+	}
+
+	token, err := maker.CreateToken(user.Username, duration)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, NewError(err))
+		return
+	}
+
+	res := loginUserResponse{
+		AccessToken: token,
+		User:        UserResponse(user),
+	}
+
+	c.JSON(http.StatusOK, res)
+	fmt.Println("OTP sent successfully")
+}
+
+func (s *Server) checkOtp(c *gin.Context) {
+	var req checkOtpRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, NewError(err))
+		return
+	}
+
+	payloadData, exists := c.Get(authorizationPayloadKey)
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Authorization payload not found"})
+		return
+	}
+
+	payload, ok := payloadData.(*util.Payload)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid authorization payload"})
+		return
+	}
+
+	user, err := s.store.GetUser(c, payload.Username)
+	if err != nil {
+		if apiErr := convertToApiErr(err); apiErr != nil {
+			c.JSON(http.StatusUnprocessableEntity, NewValidationError(apiErr))
+			return
+		}
+		c.JSON(http.StatusInternalServerError, NewError(err))
+		return
+	}
+
+	otpKey := util.OtpKeyPrefix + user.Email
+	hashedOTP, err := util.HashPassword(req.OTP)
+	if err != nil {
+		log.Printf("Error hashing OTP: %v", err)
+		c.JSON(http.StatusInternalServerError, NewError(err))
+		return
+	}
+
+	// Check if the OTP exists in Redis
+	otpStored, err := s.redis.Get(c, otpKey).Result()
+	if err != nil {
+		if s.redis == nil {
+			c.JSON(http.StatusNotFound, gin.H{"error": "OTP not found"})
+			return
+		}
+		log.Printf("Error getting OTP from Redis: %v", err)
+		c.JSON(http.StatusInternalServerError, NewError(err))
+		return
+	}
+
+	if otpStored != hashedOTP {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid OTP"})
+		return
+	}
+
+	// If OTP is valid, delete it from Redis
+	err = s.redis.Del(c, otpKey).Err()
+	if err != nil {
+		log.Printf("Error deleting OTP from Redis: %v", err)
+		c.JSON(http.StatusInternalServerError, NewError(err))
+		return
+	}
+
+	res := userResponse{
+		Username:          user.Username,
+		FullName:          user.FullName,
+		Email:             user.Email,
+		PasswordChangedAt: user.PasswordChangedAt,
+		CreatedAt:         user.CreatedAt,
+	}
+
+	c.JSON(http.StatusOK, res)
+}
+
+func (s *Server) resetPassword(c *gin.Context) {
+	var req resetPasswordRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, NewError(err))
+		return
+	}
+
+	payloadData, exists := c.Get(authorizationPayloadKey)
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Authorization payload not found"})
+		return
+	}
+	payload, ok := payloadData.(*util.Payload)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid authorization payload"})
+		return
+	}
+
+	user, err := s.store.GetUser(c, payload.Username)
+	if err != nil {
+		if apiErr := convertToApiErr(err); apiErr != nil {
+			c.JSON(http.StatusUnprocessableEntity, NewValidationError(apiErr))
+			return
+		}
+		c.JSON(http.StatusInternalServerError, NewError(err))
+		return
+	}
+
+	hashedNewPassword, err := util.HashPassword(req.NewPassword)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, NewError(err))
+		return
+	}
+
+	if user.HashedPassword == hashedNewPassword {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "New password cannot be the same as the old password"})
+		return
+	}
+
+	updatedUser, err := s.store.UpdateUserPassword(c, db.UpdateUserPasswordParams{
+		Username:       user.Username,
+		HashedPassword: hashedNewPassword,
+	})
+	if err != nil {
+		if apiErr := convertToApiErr(err); apiErr != nil {
+			c.JSON(http.StatusUnprocessableEntity, NewValidationError(apiErr))
+			return
+		}
+		c.JSON(http.StatusInternalServerError, NewError(err))
+		return
+	}
+
+	res := userResponse{
+		Username:          updatedUser.Username,
+		FullName:          updatedUser.FullName,
+		Email:             updatedUser.Email,
+		PasswordChangedAt: updatedUser.PasswordChangedAt,
+		CreatedAt:         updatedUser.CreatedAt,
+	}
+
+	c.JSON(http.StatusOK, res)
 }

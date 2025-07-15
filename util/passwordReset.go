@@ -31,7 +31,7 @@ func GenerateOTP() string {
 }
 
 func AddOTPToRedis(otp string, email string, c context.Context) error {
-	key := otpKeyPrefix + email
+	key := OtpKeyPrefix + email
 	hashedOTP, err := HashPassword(otp)
 	if err != nil {
 		log.Printf("Error hashing OTP: %v", err)
@@ -48,57 +48,6 @@ func AddOTPToRedis(otp string, email string, c context.Context) error {
 }
 
 func SendOTPEmail(otp, recepient string) error {
-	/*err := godotenv.Load()
-	if err != nil {
-		return err
-	}
-
-	viper.AutomaticEnv()
-
-	sender := viper.GetString("SMTP_EMAIL")
-	if sender == "" {
-		log.Println("SMTP_EMAIL is not set in the environment variables")
-		return err
-	}
-
-	client := config.SMTPClient
-
-	// set recipient
-	err = client.Rcpt(recepient)
-	if err != nil {
-		fmt.Printf("Error setting recipient: %v\n", err)
-		return err
-	}
-
-	// start writing email
-	writeCloser, err := client.Data()
-	if err != nil {
-		return err
-	}
-
-	// contents of the email
-	msg := fmt.Sprintf(emailTemplate, recepient, otp)
-
-	// write the email
-	_, err = writeCloser.Write([]byte(msg))
-	if err != nil {
-		return err
-	}
-
-	// close writecloser and send email
-	err = writeCloser.Close()
-	if err != nil {
-		return err
-	}
-
-	return nil*/
-
-	/*err := godotenv.Load()
-	if err != nil {
-		log.Println("Error loading .env:", err)
-		return err
-	}*/
-
 	paths := []string{".env", "../.env", "../../.env"}
 	for _, path := range paths {
 		if err := godotenv.Load(path); err == nil {

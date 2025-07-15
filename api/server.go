@@ -75,6 +75,8 @@ func (s *Server) MountHandlers() {
 	auth.GET("/accounts/:id", s.getAccount)
 	auth.GET("/user/:username", s.getUser)
 	auth.POST("/transfers", s.createTransfer)
+	auth.POST("/checkotp", s.checkOtp)
+	auth.POST("/resetpassword", s.resetPassword)
 }
 
 func (server *Server) Start(address string) error {
