@@ -54,6 +54,7 @@ func NewServer(store *db.Store, redisClient *redis.Client) (*Server, error) {
 
 	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
 		v.RegisterValidation("currency", validCurrency)
+		v.RegisterValidation("accountType", validType)
 	}
 
 	return server, nil
@@ -77,6 +78,7 @@ func (s *Server) MountHandlers() {
 	auth.POST("/transfers", s.createTransfer)
 	auth.POST("/checkotp", s.checkOtp)
 	auth.POST("/resetpassword", s.resetPassword)
+	auth.GET("/accountsbytype", s.getAccountListByOwnerAndType)
 }
 
 func (server *Server) Start(address string) error {

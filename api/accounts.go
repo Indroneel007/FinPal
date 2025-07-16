@@ -12,6 +12,7 @@ import (
 
 type accountRequest struct {
 	Currency string `json:"currency" binding:"required,currency"` // Use custom validator for currency
+	Type     string `json:"type" binding:"required,accountType"`  // Use custom validator for type
 }
 
 type getAccountRequest struct {
@@ -28,6 +29,13 @@ type transferRequest struct {
 	ToAccountID   int64  `json:"to_account_id" binding:"required"`
 	Amount        int64  `json:"amount" binding:"required,min=1"`
 	Currency      string `json:"currency" binding:"required,currency"` // Use custom validator for currency
+	Type          string `json:"type" binding:"required,accountType"`  // Use custom validator for type
+}
+
+type getAccountListByOwnerAndTypeRequest struct {
+	Type     string `form:"type" binding:"required,accountType"` // Use custom validator for type
+	PageID   int32  `form:"page_id" binding:"required,min=1"`
+	PageSize int32  `form:"page_size" binding:"required,min=1,max=5"`
 }
 
 func (s *Server) createAccount(c *gin.Context) {
@@ -52,8 +60,8 @@ func (s *Server) createAccount(c *gin.Context) {
 
 	p := db.CreateAccountParams{
 		Owner:    payload.Username,
-		Balance:  0,
 		Currency: req.Currency,
+		Type:     req.Type,
 	}
 
 	account, err := s.store.CreateAccount(c, p)
@@ -188,11 +196,11 @@ func (s *Server) createTransfer(c *gin.Context) {
 		return
 	}
 
-	if !s.ValidAccountCurrency(c, req.FromAccountID, req.Currency) {
+	if !s.ValidAccountCurrencyAndType(c, req.FromAccountID, req.Currency, req.Type) {
 		return
 	}
 
-	if !s.ValidAccountCurrency(c, req.ToAccountID, req.Currency) {
+	if !s.ValidAccountCurrencyAndType(c, req.ToAccountID, req.Currency, req.Type) {
 		return
 	}
 
@@ -215,7 +223,7 @@ func (s *Server) createTransfer(c *gin.Context) {
 	c.JSON(http.StatusOK, result)
 }
 
-func (s *Server) ValidAccountCurrency(c *gin.Context, accountID int64, currency string) bool {
+func (s *Server) ValidAccountCurrencyAndType(c *gin.Context, accountID int64, currency string, type1 string) bool {
 	account, err := s.store.GetAccount(c, accountID)
 	if err != nil {
 		if apiErr := convertToApiErr(err); apiErr != nil {
@@ -232,5 +240,50 @@ func (s *Server) ValidAccountCurrency(c *gin.Context, accountID int64, currency 
 		return false
 	}
 
+	if account.Type != type1 {
+		err = fmt.Errorf("type mismatch: account type is %s, but request type is %s", account.Type, type1)
+		c.JSON(http.StatusBadRequest, NewError(err))
+		return false
+	}
+
 	return true
+}
+
+func (s *Server) getAccountListByOwnerAndType(c *gin.Context) {
+	var req getAccountListByOwnerAndTypeRequest
+
+	if err := c.ShouldBindQuery(&req); err != nil {
+		c.JSON(http.StatusBadRequest, NewError(err))
+		return
+	}
+
+	payloadData, exists := c.Get(authorizationPayloadKey)
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Authorization payload not found"})
+		return
+	}
+
+	payload, ok := payloadData.(*util.Payload)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid authorization payload"})
+		return
+	}
+
+	accounts, err := s.store.GetAccountListByOwnerAndType(c, db.GetAccountListByOwnerAndTypeParams{
+		Owner:  payload.Username,
+		Type:   req.Type,
+		Limit:  req.PageSize,
+		Offset: (req.PageID - 1) * req.PageSize,
+	})
+
+	if err != nil {
+		if apiErr := convertToApiErr(err); apiErr != nil {
+			c.JSON(http.StatusUnprocessableEntity, NewValidationError(apiErr))
+			return
+		}
+		c.JSON(http.StatusInternalServerError, NewError(err))
+		return
+	}
+
+	c.JSON(http.StatusOK, accounts)
 }

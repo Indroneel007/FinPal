@@ -11,27 +11,34 @@ import (
 
 const createAccount = `-- name: CreateAccount :one
 INSERT INTO accounts (
-  owner, balance, currency
+  owner, balance, currency, type
 ) VALUES (
-  $1, $2, $3
+  $1, $2, $3, $4
 )
-RETURNING id, owner, balance, currency, created_at
+RETURNING id, owner, balance, currency, type, created_at
 `
 
 type CreateAccountParams struct {
 	Owner    string `json:"owner"`
 	Balance  int64  `json:"balance"`
 	Currency string `json:"currency"`
+	Type     string `json:"type"`
 }
 
 func (q *Queries) CreateAccount(ctx context.Context, arg CreateAccountParams) (Account, error) {
-	row := q.db.QueryRowContext(ctx, createAccount, arg.Owner, arg.Balance, arg.Currency)
+	row := q.db.QueryRowContext(ctx, createAccount,
+		arg.Owner,
+		arg.Balance,
+		arg.Currency,
+		arg.Type,
+	)
 	var i Account
 	err := row.Scan(
 		&i.ID,
 		&i.Owner,
 		&i.Balance,
 		&i.Currency,
+		&i.Type,
 		&i.CreatedAt,
 	)
 	return i, err
@@ -48,7 +55,7 @@ func (q *Queries) DeleteAccount(ctx context.Context, id int64) error {
 }
 
 const getAccount = `-- name: GetAccount :one
-SELECT id, owner, balance, currency, created_at FROM accounts
+SELECT id, owner, balance, currency, type, created_at FROM accounts
 WHERE id = $1 LIMIT 1
 `
 
@@ -60,13 +67,14 @@ func (q *Queries) GetAccount(ctx context.Context, id int64) (Account, error) {
 		&i.Owner,
 		&i.Balance,
 		&i.Currency,
+		&i.Type,
 		&i.CreatedAt,
 	)
 	return i, err
 }
 
 const getAccountForUpdate = `-- name: GetAccountForUpdate :one
-SELECT id, owner, balance, currency, created_at FROM accounts
+SELECT id, owner, balance, currency, type, created_at FROM accounts
 WHERE id = $1 LIMIT 1
 FOR NO KEY UPDATE
 `
@@ -79,13 +87,63 @@ func (q *Queries) GetAccountForUpdate(ctx context.Context, id int64) (Account, e
 		&i.Owner,
 		&i.Balance,
 		&i.Currency,
+		&i.Type,
 		&i.CreatedAt,
 	)
 	return i, err
 }
 
+const getAccountListByOwnerAndType = `-- name: GetAccountListByOwnerAndType :many
+SELECT id, owner, balance, currency, type, created_at FROM accounts
+WHERE owner = $1 AND type = $2
+ORDER BY id
+LIMIT $3 OFFSET $4
+`
+
+type GetAccountListByOwnerAndTypeParams struct {
+	Owner  string `json:"owner"`
+	Type   string `json:"type"`
+	Limit  int32  `json:"limit"`
+	Offset int32  `json:"offset"`
+}
+
+func (q *Queries) GetAccountListByOwnerAndType(ctx context.Context, arg GetAccountListByOwnerAndTypeParams) ([]Account, error) {
+	rows, err := q.db.QueryContext(ctx, getAccountListByOwnerAndType,
+		arg.Owner,
+		arg.Type,
+		arg.Limit,
+		arg.Offset,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Account
+	for rows.Next() {
+		var i Account
+		if err := rows.Scan(
+			&i.ID,
+			&i.Owner,
+			&i.Balance,
+			&i.Currency,
+			&i.Type,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listAccounts = `-- name: ListAccounts :many
-SELECT id, owner, balance, currency, created_at FROM accounts
+SELECT id, owner, balance, currency, type, created_at FROM accounts
 ORDER BY id
 LIMIT $1
 OFFSET $2
@@ -110,6 +168,7 @@ func (q *Queries) ListAccounts(ctx context.Context, arg ListAccountsParams) ([]A
 			&i.Owner,
 			&i.Balance,
 			&i.Currency,
+			&i.Type,
 			&i.CreatedAt,
 		); err != nil {
 			return nil, err
@@ -126,7 +185,7 @@ func (q *Queries) ListAccounts(ctx context.Context, arg ListAccountsParams) ([]A
 }
 
 const listAccountsByOwner = `-- name: ListAccountsByOwner :many
-SELECT id, owner, balance, currency, created_at FROM accounts
+SELECT id, owner, balance, currency, type, created_at FROM accounts
 WHERE owner = $1
 ORDER BY id
 LIMIT $2
@@ -153,6 +212,7 @@ func (q *Queries) ListAccountsByOwner(ctx context.Context, arg ListAccountsByOwn
 			&i.Owner,
 			&i.Balance,
 			&i.Currency,
+			&i.Type,
 			&i.CreatedAt,
 		); err != nil {
 			return nil, err
@@ -172,7 +232,7 @@ const updateAcount = `-- name: UpdateAcount :one
 UPDATE accounts
   set balance = $2
 WHERE id = $1
-RETURNING id, owner, balance, currency, created_at
+RETURNING id, owner, balance, currency, type, created_at
 `
 
 type UpdateAcountParams struct {
@@ -188,6 +248,7 @@ func (q *Queries) UpdateAcount(ctx context.Context, arg UpdateAcountParams) (Acc
 		&i.Owner,
 		&i.Balance,
 		&i.Currency,
+		&i.Type,
 		&i.CreatedAt,
 	)
 	return i, err

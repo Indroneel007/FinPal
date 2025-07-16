@@ -1,8 +1,8 @@
 -- name: CreateAccount :one
 INSERT INTO accounts (
-  owner, balance, currency
+  owner, balance, currency, type
 ) VALUES (
-  $1, $2, $3
+  $1, $2, $3, $4
 )
 RETURNING *;
 
@@ -37,3 +37,9 @@ RETURNING *;
 -- name: DeleteAccount :exec
 DELETE FROM accounts
 WHERE id = $1;
+
+-- name: GetAccountListByOwnerAndType :many
+SELECT * FROM accounts
+WHERE owner = $1 AND type = $2
+ORDER BY id
+LIMIT $3 OFFSET $4;

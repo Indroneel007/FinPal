@@ -40,3 +40,19 @@ func RandomCurrency() string {
 	n := len(curr)
 	return curr[seed.Intn(n)]
 }
+
+func RandomType() string {
+	types := []string{
+		"rent",
+		"food",
+		"salary",
+		"travel",
+		"bills",
+		"savings",
+		"shopping",
+		"medical",
+		"misc",
+	}
+	n := len(types)
+	return types[seed.Intn(n)]
+}

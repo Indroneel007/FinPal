@@ -16,6 +16,7 @@ func CreateRandomAccount(t *testing.T) Account {
 		Owner:    user.Username,
 		Balance:  util.RandomAmount(),
 		Currency: util.RandomCurrency(),
+		Type:     util.RandomType(),
 	}
 	account, err := testQueries.CreateAccount(context.Background(), args)
 
@@ -25,6 +26,8 @@ func CreateRandomAccount(t *testing.T) Account {
 	require.Equal(t, args.Balance, account.Balance)
 	require.Equal(t, args.Currency, account.Currency)
 	require.Equal(t, args.Owner, account.Owner)
+	require.Equal(t, args.Type, account.Type)
+	require.NotEmpty(t, account.CreatedAt)
 
 	require.NotZero(t, account.CreatedAt)
 	require.NotZero(t, account.ID)
