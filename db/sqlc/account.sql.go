@@ -7,6 +7,7 @@ package db
 
 import (
 	"context"
+	"database/sql"
 )
 
 const createAccount = `-- name: CreateAccount :one
@@ -15,7 +16,7 @@ INSERT INTO accounts (
 ) VALUES (
   $1, $2, $3, $4
 )
-RETURNING id, owner, balance, currency, type, created_at
+RETURNING id, owner, balance, currency, type, group_id, has_accepted, created_at
 `
 
 type CreateAccountParams struct {
@@ -39,6 +40,49 @@ func (q *Queries) CreateAccount(ctx context.Context, arg CreateAccountParams) (A
 		&i.Balance,
 		&i.Currency,
 		&i.Type,
+		&i.GroupID,
+		&i.HasAccepted,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
+const createAccountWithGroup = `-- name: CreateAccountWithGroup :one
+INSERT INTO accounts (
+  owner, balance, currency, type, group_id, has_accepted
+) VALUES (
+  $1, $2, $3, $4, $5, $6
+)
+RETURNING id, owner, balance, currency, type, group_id, has_accepted, created_at
+`
+
+type CreateAccountWithGroupParams struct {
+	Owner       string        `json:"owner"`
+	Balance     int64         `json:"balance"`
+	Currency    string        `json:"currency"`
+	Type        string        `json:"type"`
+	GroupID     sql.NullInt64 `json:"group_id"`
+	HasAccepted sql.NullBool  `json:"has_accepted"`
+}
+
+func (q *Queries) CreateAccountWithGroup(ctx context.Context, arg CreateAccountWithGroupParams) (Account, error) {
+	row := q.db.QueryRowContext(ctx, createAccountWithGroup,
+		arg.Owner,
+		arg.Balance,
+		arg.Currency,
+		arg.Type,
+		arg.GroupID,
+		arg.HasAccepted,
+	)
+	var i Account
+	err := row.Scan(
+		&i.ID,
+		&i.Owner,
+		&i.Balance,
+		&i.Currency,
+		&i.Type,
+		&i.GroupID,
+		&i.HasAccepted,
 		&i.CreatedAt,
 	)
 	return i, err
@@ -55,7 +99,7 @@ func (q *Queries) DeleteAccount(ctx context.Context, id int64) error {
 }
 
 const getAccount = `-- name: GetAccount :one
-SELECT id, owner, balance, currency, type, created_at FROM accounts
+SELECT id, owner, balance, currency, type, group_id, has_accepted, created_at FROM accounts
 WHERE id = $1 LIMIT 1
 `
 
@@ -68,13 +112,41 @@ func (q *Queries) GetAccount(ctx context.Context, id int64) (Account, error) {
 		&i.Balance,
 		&i.Currency,
 		&i.Type,
+		&i.GroupID,
+		&i.HasAccepted,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
+const getAccountByGroupIDAndOwner = `-- name: GetAccountByGroupIDAndOwner :one
+SELECT id, owner, balance, currency, type, group_id, has_accepted, created_at FROM accounts
+WHERE group_id = $1 AND owner = $2 LIMIT 1
+`
+
+type GetAccountByGroupIDAndOwnerParams struct {
+	GroupID sql.NullInt64 `json:"group_id"`
+	Owner   string        `json:"owner"`
+}
+
+func (q *Queries) GetAccountByGroupIDAndOwner(ctx context.Context, arg GetAccountByGroupIDAndOwnerParams) (Account, error) {
+	row := q.db.QueryRowContext(ctx, getAccountByGroupIDAndOwner, arg.GroupID, arg.Owner)
+	var i Account
+	err := row.Scan(
+		&i.ID,
+		&i.Owner,
+		&i.Balance,
+		&i.Currency,
+		&i.Type,
+		&i.GroupID,
+		&i.HasAccepted,
 		&i.CreatedAt,
 	)
 	return i, err
 }
 
 const getAccountForUpdate = `-- name: GetAccountForUpdate :one
-SELECT id, owner, balance, currency, type, created_at FROM accounts
+SELECT id, owner, balance, currency, type, group_id, has_accepted, created_at FROM accounts
 WHERE id = $1 LIMIT 1
 FOR NO KEY UPDATE
 `
@@ -88,13 +160,15 @@ func (q *Queries) GetAccountForUpdate(ctx context.Context, id int64) (Account, e
 		&i.Balance,
 		&i.Currency,
 		&i.Type,
+		&i.GroupID,
+		&i.HasAccepted,
 		&i.CreatedAt,
 	)
 	return i, err
 }
 
 const getAccountListByOwnerAndType = `-- name: GetAccountListByOwnerAndType :many
-SELECT id, owner, balance, currency, type, created_at FROM accounts
+SELECT id, owner, balance, currency, type, group_id, has_accepted, created_at FROM accounts
 WHERE owner = $1 AND type = $2
 ORDER BY id
 LIMIT $3 OFFSET $4
@@ -127,6 +201,8 @@ func (q *Queries) GetAccountListByOwnerAndType(ctx context.Context, arg GetAccou
 			&i.Balance,
 			&i.Currency,
 			&i.Type,
+			&i.GroupID,
+			&i.HasAccepted,
 			&i.CreatedAt,
 		); err != nil {
 			return nil, err
@@ -143,7 +219,7 @@ func (q *Queries) GetAccountListByOwnerAndType(ctx context.Context, arg GetAccou
 }
 
 const listAccounts = `-- name: ListAccounts :many
-SELECT id, owner, balance, currency, type, created_at FROM accounts
+SELECT id, owner, balance, currency, type, group_id, has_accepted, created_at FROM accounts
 ORDER BY id
 LIMIT $1
 OFFSET $2
@@ -169,6 +245,8 @@ func (q *Queries) ListAccounts(ctx context.Context, arg ListAccountsParams) ([]A
 			&i.Balance,
 			&i.Currency,
 			&i.Type,
+			&i.GroupID,
+			&i.HasAccepted,
 			&i.CreatedAt,
 		); err != nil {
 			return nil, err
@@ -185,7 +263,7 @@ func (q *Queries) ListAccounts(ctx context.Context, arg ListAccountsParams) ([]A
 }
 
 const listAccountsByOwner = `-- name: ListAccountsByOwner :many
-SELECT id, owner, balance, currency, type, created_at FROM accounts
+SELECT id, owner, balance, currency, type, group_id, has_accepted, created_at FROM accounts
 WHERE owner = $1
 ORDER BY id
 LIMIT $2
@@ -213,6 +291,8 @@ func (q *Queries) ListAccountsByOwner(ctx context.Context, arg ListAccountsByOwn
 			&i.Balance,
 			&i.Currency,
 			&i.Type,
+			&i.GroupID,
+			&i.HasAccepted,
 			&i.CreatedAt,
 		); err != nil {
 			return nil, err
@@ -228,11 +308,34 @@ func (q *Queries) ListAccountsByOwner(ctx context.Context, arg ListAccountsByOwn
 	return items, nil
 }
 
+const updateAccountGroup = `-- name: UpdateAccountGroup :one
+UPDATE accounts
+  set group_id = NULL
+WHERE id = $1
+RETURNING id, owner, balance, currency, type, group_id, has_accepted, created_at
+`
+
+func (q *Queries) UpdateAccountGroup(ctx context.Context, id int64) (Account, error) {
+	row := q.db.QueryRowContext(ctx, updateAccountGroup, id)
+	var i Account
+	err := row.Scan(
+		&i.ID,
+		&i.Owner,
+		&i.Balance,
+		&i.Currency,
+		&i.Type,
+		&i.GroupID,
+		&i.HasAccepted,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
 const updateAcount = `-- name: UpdateAcount :one
 UPDATE accounts
   set balance = $2
 WHERE id = $1
-RETURNING id, owner, balance, currency, type, created_at
+RETURNING id, owner, balance, currency, type, group_id, has_accepted, created_at
 `
 
 type UpdateAcountParams struct {
@@ -249,6 +352,8 @@ func (q *Queries) UpdateAcount(ctx context.Context, arg UpdateAcountParams) (Acc
 		&i.Balance,
 		&i.Currency,
 		&i.Type,
+		&i.GroupID,
+		&i.HasAccepted,
 		&i.CreatedAt,
 	)
 	return i, err

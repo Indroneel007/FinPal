@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"database/sql"
 	"examples/SimpleBankProject/util"
 	"fmt"
 	"testing"
@@ -129,4 +130,90 @@ func TestTransferTx(t *testing.T) {
 	require.Equal(t, account1.Balance-int64(n)*amount, updatedAccount1.Balance)
 	require.Equal(t, account2.Balance+int64(n)*amount, updatedAccount2.Balance)
 
+}
+
+func CreateRandomAccountWithGroup(t *testing.T) Account {
+	user := CreateRandomUser(t)
+
+	group := CreateRandomGroup(t)
+
+	args := CreateAccountWithGroupParams{
+		Owner:    user.Username,
+		Balance:  util.RandomAmount(),
+		Currency: util.RandomCurrency(),
+		Type:     util.RandomType(),
+		GroupID:  sql.NullInt64{Int64: group.ID, Valid: true},
+	}
+	account, err := testQueries.CreateAccountWithGroup(context.Background(), args)
+
+	require.NoError(t, err)
+
+	require.NotEmpty(t, account)
+	require.Equal(t, args.Balance, account.Balance)
+	require.Equal(t, args.Currency, account.Currency)
+	require.Equal(t, args.Owner, account.Owner)
+	require.Equal(t, args.Type, account.Type)
+	require.Equal(t, args.GroupID, account.GroupID)
+	require.NotEmpty(t, account.CreatedAt)
+
+	require.NotZero(t, account.CreatedAt)
+	require.NotZero(t, account.ID)
+	fmt.Printf("Created account with group: %v\n", account.ID)
+
+	return account
+}
+
+func CreateRandomGroup(t *testing.T) Group {
+	store := NewStore(testDB)
+
+	groupName := util.RandomGroupName()
+	currency := util.RandomCurrency()
+	groupType := util.RandomType()
+
+	group, err := store.CreateGroup(context.Background(), CreateGroupParams{
+		GroupName: groupName,
+		Currency:  currency,
+		Type:      groupType,
+	})
+
+	require.NoError(t, err)
+	require.NotEmpty(t, group)
+	require.Equal(t, groupName, group.GroupName)
+	require.Equal(t, currency, group.Currency)
+	require.Equal(t, groupType, group.Type)
+	require.NotZero(t, group.ID)
+	require.NotZero(t, group.CreatedAt)
+
+	return group
+}
+
+func CreateGroupTx(t *testing.T) {
+	store := NewStore(testDB)
+
+	username := CreateRandomUser(t).Username
+	groupName := util.RandomGroupName()
+	currency := util.RandomCurrency()
+	groupType := util.RandomType()
+
+	result, err := store.CreateGroupTx(context.Background(), CreateGroupTxParams{
+		Username:  username,
+		GroupName: groupName,
+		Currency:  currency,
+		Type:      groupType,
+	})
+
+	require.NoError(t, err)
+	require.NotEmpty(t, result)
+
+	require.Equal(t, groupName, result.Group.GroupName)
+	require.Equal(t, currency, result.Group.Currency)
+	require.Equal(t, groupType, result.Group.Type)
+	require.NotZero(t, result.Group.ID)
+	require.NotZero(t, result.Group.CreatedAt)
+
+	require.Equal(t, username, result.Account.Owner)
+	require.Equal(t, currency, result.Account.Currency)
+	require.Equal(t, groupType, result.Account.Type)
+	require.NotZero(t, result.Account.ID)
+	require.NotZero(t, result.Account.CreatedAt)
 }

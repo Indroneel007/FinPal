@@ -56,3 +56,9 @@ func RandomType() string {
 	n := len(types)
 	return types[seed.Intn(n)]
 }
+
+func RandomGroupName() string {
+	words := []string{"Friends", "Family", "Work", "Gym", "Travel", "Hobbies"}
+	n := len(words)
+	return words[seed.Intn(n)] + " Group"
+}

@@ -6,6 +6,14 @@ INSERT INTO accounts (
 )
 RETURNING *;
 
+-- name: CreateAccountWithGroup :one
+INSERT INTO accounts (
+  owner, balance, currency, type, group_id, has_accepted
+) VALUES (
+  $1, $2, $3, $4, $5, $6
+)
+RETURNING *;
+
 -- name: ListAccounts :many
 SELECT * FROM accounts
 ORDER BY id
@@ -23,6 +31,10 @@ OFFSET $3;
 SELECT * FROM accounts
 WHERE id = $1 LIMIT 1;
 
+-- name: GetAccountByGroupIDAndOwner :one
+SELECT * FROM accounts
+WHERE group_id = $1 AND owner = $2 LIMIT 1;
+
 -- name: GetAccountForUpdate :one
 SELECT * FROM accounts
 WHERE id = $1 LIMIT 1
@@ -31,6 +43,12 @@ FOR NO KEY UPDATE;
 -- name: UpdateAcount :one
 UPDATE accounts
   set balance = $2
+WHERE id = $1
+RETURNING *;
+
+-- name: UpdateAccountGroup :one
+UPDATE accounts
+  set group_id = NULL
 WHERE id = $1
 RETURNING *;
 

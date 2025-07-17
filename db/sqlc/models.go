@@ -5,16 +5,19 @@
 package db
 
 import (
+	"database/sql"
 	"time"
 )
 
 type Account struct {
-	ID        int64     `json:"id"`
-	Owner     string    `json:"owner"`
-	Balance   int64     `json:"balance"`
-	Currency  string    `json:"currency"`
-	Type      string    `json:"type"`
-	CreatedAt time.Time `json:"created_at"`
+	ID          int64         `json:"id"`
+	Owner       string        `json:"owner"`
+	Balance     int64         `json:"balance"`
+	Currency    string        `json:"currency"`
+	Type        string        `json:"type"`
+	GroupID     sql.NullInt64 `json:"group_id"`
+	HasAccepted sql.NullBool  `json:"has_accepted"`
+	CreatedAt   time.Time     `json:"created_at"`
 }
 
 type Entry struct {
@@ -22,6 +25,22 @@ type Entry struct {
 	AccountID int64 `json:"account_id"`
 	// It can be negative or positive
 	Amount    int64     `json:"amount"`
+	CreatedAt time.Time `json:"created_at"`
+}
+
+type Group struct {
+	ID        int64     `json:"id"`
+	GroupName string    `json:"group_name"`
+	Currency  string    `json:"currency"`
+	Type      string    `json:"type"`
+	CreatedAt time.Time `json:"created_at"`
+}
+
+type Notification struct {
+	ID        int64     `json:"id"`
+	AccountID int64     `json:"account_id"`
+	Message   string    `json:"message"`
+	Sent      bool      `json:"sent"`
 	CreatedAt time.Time `json:"created_at"`
 }
 

@@ -64,13 +64,13 @@ func (s *Server) MountHandlers() {
 	public := s.router.Group("/")
 	auth := s.router.Group("/").Use(AuthMiddleware(s.tokenMaker))
 
-	// ✅ Public routes (no auth)
+	// Public routes (no auth)
 	public.POST("/register", s.createUser)
 	public.GET("/tests", s.TestRoute)
 	public.POST("/forgotpassword", s.forgotPassword)
 	public.POST("/login", s.loginUser)
 
-	// ✅ Authenticated routes
+	// Authenticated routes
 	auth.POST("/accounts", s.createAccount)
 	auth.GET("/accounts", s.listAccounts)
 	auth.GET("/accounts/:id", s.getAccount)
@@ -79,6 +79,18 @@ func (s *Server) MountHandlers() {
 	auth.POST("/checkotp", s.checkOtp)
 	auth.POST("/resetpassword", s.resetPassword)
 	auth.GET("/accountsbytype", s.getAccountListByOwnerAndType)
+
+	//Groups Routes
+	auth.POST("/groups", s.createGroup)
+	auth.GET("/groups", s.listGroups)
+	auth.GET("/groups/:id", s.getGroup)
+	auth.POST("/groups/:id/add", s.addMemberToGroup)
+	auth.GET("/groups/:id/accounts", s.getGroupMembers)
+	auth.POST("/groups/:id/updatename", s.updateGroupName)
+	auth.POST("/groups/:id/leave", s.leaveGroup)
+	auth.POST("/groups/:id/delete", s.deleteGroup)
+
+	//notifications
 }
 
 func (server *Server) Start(address string) error {

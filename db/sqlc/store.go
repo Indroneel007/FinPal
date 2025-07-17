@@ -131,3 +131,45 @@ func (store *Store) TransferTx(ctx context.Context, arg TransferTxParams) (Trans
 	})
 	return result, err
 }
+
+type CreateGroupTxParams struct {
+	Username  string `json:"username"`
+	GroupName string `json:"group_name"`
+	Currency  string `json:"currency"`
+	Type      string `json:"type"`
+}
+
+type CreateGroupTxResult struct {
+	Group   Group   `json:"group"`
+	Account Account `json:"account"`
+}
+
+func (store *Store) CreateGroupTx(ctx context.Context, arg CreateGroupTxParams) (CreateGroupTxResult, error) {
+	var result CreateGroupTxResult
+	err := store.execTx(ctx, func(*Queries) error {
+		var err error
+
+		result.Group, err = store.CreateGroup(ctx, CreateGroupParams{
+			GroupName: arg.GroupName,
+			Currency:  arg.Currency,
+			Type:      arg.Type,
+		})
+		if err != nil {
+			return fmt.Errorf("create group error: %w", err)
+		}
+
+		result.Account, err = store.CreateAccountWithGroup(ctx, CreateAccountWithGroupParams{
+			Owner:    arg.Username,
+			Balance:  0,
+			Currency: arg.Currency,
+			Type:     arg.Type,
+			GroupID:  sql.NullInt64{Int64: result.Group.ID, Valid: true},
+		})
+		if err != nil {
+			return fmt.Errorf("create account with group error: %w", err)
+		}
+
+		return nil
+	})
+	return result, err
+}
