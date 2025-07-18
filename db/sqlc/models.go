@@ -36,6 +36,14 @@ type Group struct {
 	CreatedAt time.Time `json:"created_at"`
 }
 
+type Location struct {
+	ID        int64           `json:"id"`
+	Username  string          `json:"username"`
+	Address   string          `json:"address"`
+	Latitude  sql.NullFloat64 `json:"latitude"`
+	Longitude sql.NullFloat64 `json:"longitude"`
+}
+
 type Notification struct {
 	ID        int64     `json:"id"`
 	AccountID int64     `json:"account_id"`

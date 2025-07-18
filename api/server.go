@@ -89,6 +89,11 @@ func (s *Server) MountHandlers() {
 	auth.POST("/groups/:id/updatename", s.updateGroupName)
 	auth.POST("/groups/:id/leave", s.leaveGroup)
 	auth.POST("/groups/:id/delete", s.deleteGroup)
+
+	//Location
+	auth.POST("/location", s.createLocation)
+	//auth.POST("/location/:id", s.updateLocation)
+	auth.GET("/location", s.getLocation)
 }
 
 func (server *Server) Start(address string) error {
