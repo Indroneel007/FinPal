@@ -89,8 +89,6 @@ func (s *Server) MountHandlers() {
 	auth.POST("/groups/:id/updatename", s.updateGroupName)
 	auth.POST("/groups/:id/leave", s.leaveGroup)
 	auth.POST("/groups/:id/delete", s.deleteGroup)
-
-	//notifications
 }
 
 func (server *Server) Start(address string) error {
