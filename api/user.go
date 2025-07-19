@@ -20,6 +20,7 @@ type userRegisterRequest struct {
 	Password string `json:"password" binding:"required"`
 	FullName string `json:"full_name" binding:"required"`
 	Email    string `json:"email" binding:"required,email"`
+	Salary   int64  `json:"salary" binding:"required"`
 }
 
 type getUserRequest struct {
@@ -35,6 +36,7 @@ type userResponse struct {
 	Username          string    `json:"username"`
 	FullName          string    `json:"full_name"`
 	Email             string    `json:"email"`
+	Salary            int64     `json:"salary"`
 	PasswordChangedAt time.Time `json:"password_changed_at"`
 	CreatedAt         time.Time `json:"created_at"`
 }
@@ -61,6 +63,7 @@ func UserResponse(user db.User) userResponse {
 		Username:          user.Username,
 		FullName:          user.FullName,
 		Email:             user.Email,
+		Salary:            user.Salary,
 		PasswordChangedAt: user.PasswordChangedAt,
 		CreatedAt:         user.CreatedAt,
 	}
@@ -86,6 +89,7 @@ func (s *Server) createUser(c *gin.Context) {
 		HashedPassword: password,
 		FullName:       req.FullName,
 		Email:          req.Email,
+		Salary:         req.Salary,
 	}
 
 	user, err := s.store.CreateUser(c, p)

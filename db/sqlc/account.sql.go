@@ -218,6 +218,48 @@ func (q *Queries) GetAccountListByOwnerAndType(ctx context.Context, arg GetAccou
 	return items, nil
 }
 
+const getTotalByOwnerAndType = `-- name: GetTotalByOwnerAndType :many
+SELECT
+  owner,
+  type,
+  SUM(balance) AS total_balance
+FROM
+  accounts
+WHERE
+  owner = $1
+GROUP BY
+  owner, type
+`
+
+type GetTotalByOwnerAndTypeRow struct {
+	Owner        string `json:"owner"`
+	Type         string `json:"type"`
+	TotalBalance int64  `json:"total_balance"`
+}
+
+func (q *Queries) GetTotalByOwnerAndType(ctx context.Context, owner string) ([]GetTotalByOwnerAndTypeRow, error) {
+	rows, err := q.db.QueryContext(ctx, getTotalByOwnerAndType, owner)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetTotalByOwnerAndTypeRow
+	for rows.Next() {
+		var i GetTotalByOwnerAndTypeRow
+		if err := rows.Scan(&i.Owner, &i.Type, &i.TotalBalance); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listAccounts = `-- name: ListAccounts :many
 SELECT id, owner, balance, currency, type, group_id, has_accepted, created_at FROM accounts
 ORDER BY id

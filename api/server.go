@@ -19,6 +19,7 @@ type Server struct {
 	tokenMaker util.Maker
 	router     *gin.Engine
 	redis      *redis.Client
+	geminiKey  string
 }
 
 func NewServer(store *db.Store, redisClient *redis.Client) (*Server, error) {
@@ -45,11 +46,17 @@ func NewServer(store *db.Store, redisClient *redis.Client) (*Server, error) {
 		return nil, fmt.Errorf("cannot create token maker: %v", err)
 	}
 
+	geminiAI := viper.GetString("GEMINI_API_KEY")
+	if geminiAI == "" {
+		return nil, fmt.Errorf("GEMINI_API_KEY is not set in the environment variables")
+	}
+
 	server := &Server{
 		store:      store,
 		tokenMaker: tokenMaker,
 		router:     gin.Default(),
 		redis:      redisClient,
+		geminiKey:  geminiAI,
 	}
 
 	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
@@ -94,6 +101,9 @@ func (s *Server) MountHandlers() {
 	auth.POST("/location", s.createLocation)
 	//auth.POST("/location/:id", s.updateLocation)
 	auth.GET("/location", s.getLocation)
+
+	//prompt
+	auth.POST("/prompt", s.PromptAPI)
 }
 
 func (server *Server) Start(address string) error {

@@ -4,7 +4,6 @@ const (
 	rent     = "rent"
 	food     = "food"
 	travel   = "travel"
-	salary   = "salary"
 	savings  = "savings"
 	bills    = "bills"
 	medical  = "medical"
@@ -14,7 +13,7 @@ const (
 
 func IsSupportedType(accountType string) bool {
 	switch accountType {
-	case rent, food, travel, salary, savings, bills, medical, shopping, misc:
+	case rent, food, travel, savings, bills, medical, shopping, misc:
 		return true
 	default:
 		return false

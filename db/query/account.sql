@@ -61,3 +61,15 @@ SELECT * FROM accounts
 WHERE owner = $1 AND type = $2
 ORDER BY id
 LIMIT $3 OFFSET $4;
+
+-- name: GetTotalByOwnerAndType :many
+SELECT
+  owner,
+  type,
+  SUM(balance) AS total_balance
+FROM
+  accounts
+WHERE
+  owner = $1
+GROUP BY
+  owner, type;
