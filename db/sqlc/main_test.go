@@ -39,7 +39,7 @@ func TestMain(m *testing.M) {
 
 	/*err = godotenv.Load()
 	if err != nil {
-		log.Fatal("Error loading .env file:", err)
+		log.Fatal("Error locacaacading .env file:", err)
 	}*/
 
 	paths := []string{".env", "../.env", "../../.env"}
