@@ -44,6 +44,14 @@ func SetupRedisCache() *RedisCache {
 	REDIS_HOST := viper.GetString("REDIS_HOST")
 	REDIS_PORT := viper.GetString("REDIS_PORT")
 
+	if REDIS_HOST == "" {
+		REDIS_HOST = "localhost"
+	}
+
+	if REDIS_PORT == "" {
+		REDIS_PORT = "6379"
+	}
+
 	client := redis.NewClient(&redis.Options{
 		Network: "tcp",
 		Addr: fmt.Sprintf(
