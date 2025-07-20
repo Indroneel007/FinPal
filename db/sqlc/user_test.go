@@ -28,7 +28,7 @@ func CreateRandomUser(t *testing.T) User {
 	if err != nil {
 		t.Fatalf("failed to create user: %v", err)
 	}
-	//00ccac
+	//00ccaceffef
 	require.NoError(t, err)
 	require.NotEmpty(t, user)
 	require.Equal(t, args.Username, user.Username)
