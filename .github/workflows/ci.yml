@@ -9,8 +9,8 @@ on:
 jobs:
   test:
     env:
-      DB_SOURCE: ${{ secrets.DBSOURCE }}
-      SERVER_ADDRESS: ${{ secrets.SERVERADDRESS }}
+      DBSOURCE: ${{ secrets.DBSOURCE }}
+      SERVERADDRESS: ${{ secrets.SERVERADDRESS }}
       TOKEN_SECRET: ${{ secrets.TOKEN_SECRET }}
       TOKEN_DURATION: ${{ secrets.TOKEN_DURATION }}
       SMTP_HOST: ${{ secrets.SMTP_HOST }}
