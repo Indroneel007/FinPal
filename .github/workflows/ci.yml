@@ -7,7 +7,6 @@ on:
     branches: [ "master" ]
 
 jobs:
-
   test:
     env:
       DB_SOURCE: ${{ secrets.DBSOURCE }}
@@ -22,7 +21,8 @@ jobs:
       REDIS_PORT: ${{ secrets.REDIS_PORT }}
       GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
       OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
-    name: Test
+    
+      name: Test
     runs-on: ubuntu-latest
 
     services:
@@ -46,7 +46,7 @@ jobs:
       redis:
         image: redis:8.0
         ports:
-          - 6379:6379
+          - 6379:{{ secrets.REDIS_PORT }}
         options: >-
           --health-cmd "redis-cli ping"
           --health-interval 10s
