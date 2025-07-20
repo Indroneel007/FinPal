@@ -16,7 +16,6 @@ var testDB *sql.DB
 
 const (
 	dbDriver = "postgres"
-	dbSource = "postgresql://root:rootpassword@localhost:5433/simple_bank_2?sslmode=disable"
 )
 
 func TestMain(m *testing.M) {
@@ -35,6 +34,8 @@ func TestMain(m *testing.M) {
 
 	var err error
 	viper.AutomaticEnv()
+
+	dbSource := viper.GetString("DBSOURCE")
 
 	if dbSource == "" {
 		log.Fatal("dbSource is not set in the environment variables")

@@ -17,7 +17,6 @@ import (
 var (
 	dbDriver = "postgres"
 	//dbSource      = viper.GetString("dbSource")
-	//serverAddress = "0.0.0.0:9090" // Change this to your desired address and port
 )
 
 func main() {
@@ -33,12 +32,12 @@ func main() {
 	}
 
 	viper.AutomaticEnv()
-	dbSource := viper.GetString("dbSource")
+	dbSource := viper.GetString("DBSOURCE")
 	if dbSource == "" {
 		log.Fatal("dbSource is not set in the environment variables")
 	}
 
-	serverAddress := viper.GetString("serverAddress")
+	serverAddress := viper.GetString("SERVERADDRESS")
 	if serverAddress == "" {
 		log.Fatal("serverAddress is not set in the environment variables")
 	}
