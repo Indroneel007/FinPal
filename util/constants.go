@@ -17,6 +17,10 @@ const (
 		"\r\n" +
 		"Your OTP for password reset is %s\r\n"
 
+	PromptStorePrefix = "cost-of-living:"
+	PromptStoreExp    = time.Minute * 1440
+	// public because needed for testing
+
 	// public because needed for testing
 	OTPLength = 4
 )

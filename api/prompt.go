@@ -1,6 +1,7 @@
 package api
 
 import (
+	"encoding/json"
 	"examples/SimpleBankProject/prompt"
 	"examples/SimpleBankProject/util"
 	"net/http"
@@ -100,11 +101,31 @@ func (server *Server) PromptAPI(c *gin.Context) {
 		return
 	}
 
-	standardCosts, err := prompt.GetCostOfLivingFromAI(c, location.Address)
-
+	existsInRedis, err := server.redis.Exists(c, util.PromptStorePrefix+location.Address).Result()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Prompt query failed: " + err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "redis query failed: " + err.Error()})
 		return
+	}
+
+	var standardCosts prompt.ExpenseCategories
+
+	if existsInRedis == 1 {
+		redisData, err := server.redis.Get(c, util.PromptStorePrefix+location.Address).Result()
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "redis query failed: " + err.Error()})
+			return
+		}
+
+		if err := json.Unmarshal([]byte(redisData), &standardCosts); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "unmarshal failed: " + err.Error()})
+			return
+		}
+	} else {
+		standardCosts, err = prompt.GetCostOfLivingFromAI(c, location.Address)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Prompt query failed: " + err.Error()})
+			return
+		}
 	}
 
 	// Compose prompt
