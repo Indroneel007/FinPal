@@ -38,7 +38,7 @@ func TestMain(m *testing.M) {
 	dbSource := viper.GetString("DBSOURCE")
 
 	if dbSource == "" {
-		log.Fatal("dbSource is not set in the environment variables")
+		log.Fatal("Unable to read DBSOURCE environment variable in test")
 	}
 
 	testDB, err = sql.Open(dbDriver, dbSource)
