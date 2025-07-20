@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
@@ -13,6 +14,22 @@ import (
 
 var testQueries *Queries
 var testDB *sql.DB
+
+func waitForDB(dbSource string) error {
+	var db *sql.DB
+	var err error
+	for i := 0; i < 10; i++ {
+		db, err = sql.Open("postgres", dbSource)
+		if err == nil {
+			err = db.Ping()
+			if err == nil {
+				return nil // success
+			}
+		}
+		time.Sleep(2 * time.Second)
+	}
+	return err
+}
 
 const (
 	dbDriver = "postgres"
@@ -39,6 +56,10 @@ func TestMain(m *testing.M) {
 
 	if dbSource == "" {
 		log.Fatal("Unable to read DBSOURCE environment variable in test")
+	}
+
+	if err = waitForDB(dbSource); err != nil {
+		log.Fatalf("Cannot connect to DB after waiting: %v", err)
 	}
 
 	testDB, err = sql.Open(dbDriver, dbSource)
