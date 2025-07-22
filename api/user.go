@@ -339,12 +339,12 @@ func (s *Server) checkOtp(c *gin.Context) {
 	}
 
 	otpKey := util.OtpKeyPrefix + user.Email
-	hashedOTP, err := util.HashPassword(req.OTP)
+	/*hashedOTP, err := util.HashPassword(req.OTP)
 	if err != nil {
 		log.Printf("Error hashing OTP: %v", err)
 		c.JSON(http.StatusInternalServerError, NewError(err))
 		return
-	}
+	}*/
 
 	// Check if the OTP exists in Redis
 	otpStored, err := s.redis.Get(c, otpKey).Result()
@@ -358,7 +358,8 @@ func (s *Server) checkOtp(c *gin.Context) {
 		return
 	}
 
-	if otpStored != hashedOTP {
+	ok = util.CheckPasswordHash(req.OTP, otpStored)
+	if !ok {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid OTP"})
 		return
 	}

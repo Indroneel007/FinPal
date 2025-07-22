@@ -11,6 +11,7 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/go-redis/redis/v8"
 	"github.com/joho/godotenv"
+	"github.com/rs/cors"
 	"github.com/spf13/viper"
 )
 
@@ -51,10 +52,23 @@ func NewServer(store *db.Store, redisClient *redis.Client) (*Server, error) {
 		return nil, fmt.Errorf("GEMINI_API_KEY is not set in the environment variables")
 	}
 
+	ginRouter := gin.Default()
+
+	// CORS middleware for development - allow all origins
+	corsMiddleware := cors.New(cors.Options{
+		AllowedOrigins:   []string{"*"},
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedHeaders:   []string{"*"},
+		AllowCredentials: true,
+	})
+	ginRouter.Use(func(c *gin.Context) {
+		corsMiddleware.HandlerFunc(c.Writer, c.Request)
+	})
+
 	server := &Server{
 		store:      store,
 		tokenMaker: tokenMaker,
-		router:     gin.Default(),
+		router:     ginRouter,
 		redis:      redisClient,
 		geminiKey:  geminiAI,
 	}
@@ -96,7 +110,6 @@ func (s *Server) MountHandlers() {
 	auth.POST("/groups/:id/updatename", s.updateGroupName)
 	auth.POST("/groups/:id/leave", s.leaveGroup)
 	auth.POST("/groups/:id/delete", s.deleteGroup)
-
 	//Location
 	auth.POST("/location", s.createLocation)
 	//auth.POST("/location/:id", s.updateLocation)
