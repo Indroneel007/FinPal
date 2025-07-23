@@ -7,6 +7,7 @@ import ForgotPassword from './ForgotPassword';
 import OtpVerify from './OtpVerify';
 import { Routes, Route } from 'react-router-dom';
 import ResetPassword from './ResetPassword';
+import Location from './Location';
 
 function App() {
   const [authMode, setAuthMode] = useState(null);
@@ -33,6 +34,7 @@ function App() {
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/otp-verify" element={<OtpVerify />} />
         <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/location" element={<Location />} />
       </Routes>
     </div>
   );

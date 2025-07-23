@@ -61,7 +61,9 @@ export default function AuthCard({ mode, onClose, onSwitch }) {
           alert(err.error || 'Registration failed');
           return;
         }
-        alert('Registration successful!');
+        const data = await res.json();
+        // Redirect to location page with access token
+        navigate('/location', { state: { access_token: data.access_token, username: form.username } });
         onClose();
       } catch (err) {
         alert('Network error: ' + err.message);

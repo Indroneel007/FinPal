@@ -70,6 +70,27 @@ func UserResponse(user db.User) userResponse {
 }
 
 func (s *Server) createUser(c *gin.Context) {
+	paths := []string{".env", "../.env", "../../.env"}
+	for _, path := range paths {
+		if err := godotenv.Load(path); err == nil {
+			break
+		}
+	}
+
+	var err error
+
+	viper.AutomaticEnv()
+	secret := viper.GetString("TOKEN_SECRET")
+	if secret == "" {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "TOKEN_SECRET is not set in the environment variables"})
+		return
+	}
+	duration := viper.GetDuration("TOKEN_DURATION")
+	if duration == 0 {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "TOKEN_DURATION is not set in the environment variables"})
+		return
+	}
+
 	var req userRegisterRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -102,7 +123,21 @@ func (s *Server) createUser(c *gin.Context) {
 		return
 	}
 
-	res := UserResponse(user)
+	var maker = &util.PasetoMaker{
+		Paseto:       paseto.NewV2(),
+		SymmetricKey: []byte(secret),
+	}
+
+	token, err := maker.CreateToken(user.Username, duration)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, NewError(err))
+		return
+	}
+
+	res := loginUserResponse{
+		AccessToken: token,
+		User:        UserResponse(user),
+	}
 
 	c.JSON(http.StatusOK, res)
 }
