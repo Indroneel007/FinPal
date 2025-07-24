@@ -2,7 +2,7 @@ package db
 
 import (
 	"context"
-	"database/sql"
+	//"database/sql"
 	"examples/SimpleBankProject/util"
 	"fmt"
 	"testing"
@@ -10,11 +10,11 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func CreateRandomAccount(t *testing.T) Account {
-	user := CreateRandomUser(t)
+func CreateRandomAccount(t *testing.T, username string) Account {
+	user := username
 
 	args := CreateAccountParams{
-		Owner:    user.Username,
+		Owner:    user,
 		Balance:  util.RandomAmount(),
 		Currency: util.RandomCurrency(),
 		Type:     util.RandomType(),
@@ -37,11 +37,45 @@ func CreateRandomAccount(t *testing.T) Account {
 	return account
 }
 
+func CreateRandomAccountWithCurrencyType(t *testing.T, username, currency, accType string) Account {
+	args := CreateAccountParams{
+		Owner:    username,
+		Balance:  util.RandomAmount(),
+		Currency: currency,
+		Type:     accType,
+	}
+	account, err := testQueries.CreateAccount(context.Background(), args)
+	require.NoError(t, err)
+	require.NotEmpty(t, account)
+	return account
+}
+
 func TestTransferTx(t *testing.T) {
 	store := NewStore(testDB)
 
-	account1 := CreateRandomAccount(t)
-	account2 := CreateRandomAccount(t)
+	user1 := CreateRandomUser(t)
+	user2 := CreateRandomUser(t)
+
+	accountA := CreateRandomAccount(t, user1.Username)
+	accountB := CreateRandomAccountWithCurrencyType(t, user2.Username, accountA.Currency, accountA.Type)
+
+	account1, err := testQueries.GetAccountByOwnerCurrencyType(context.Background(), GetAccountByOwnerCurrencyTypeParams{
+		Owner:    user1.Username,
+		Currency: accountA.Currency,
+		Type:     accountA.Type,
+	})
+	require.NoError(t, err)
+	require.NotEmpty(t, account1)
+	require.Equal(t, accountA.ID, account1.ID)
+
+	account2, err := testQueries.GetAccountByOwnerCurrencyType(context.Background(), GetAccountByOwnerCurrencyTypeParams{
+		Owner:    user2.Username,
+		Currency: accountB.Currency,
+		Type:     accountB.Type,
+	})
+	require.NoError(t, err)
+	require.NotEmpty(t, account2)
+	require.Equal(t, accountB.ID, account2.ID)
 
 	amount := int64(10)
 	n := 2
@@ -55,9 +89,11 @@ func TestTransferTx(t *testing.T) {
 		go func() {
 			//ctx := context.WithValue(context.Background())
 			result, err := store.TransferTx(context.Background(), TransferTxParams{
-				FromAccountID: account1.ID,
-				ToAccountID:   account2.ID,
-				Amount:        amount,
+				FromUsername: account1.Owner,
+				ToUsername:   account2.Owner,
+				Currency:     account1.Currency,
+				Type:         account1.Type,
+				Amount:       amount,
 			})
 
 			fmt.Printf("Transfer %d: %v\n", i+1, result.FromEntry.AccountID)
@@ -132,7 +168,7 @@ func TestTransferTx(t *testing.T) {
 
 }
 
-func CreateRandomAccountWithGroup(t *testing.T) Account {
+/*func CreateRandomAccountWithGroup(t *testing.T) Account {
 	user := CreateRandomUser(t)
 
 	group := CreateRandomGroup(t)
@@ -216,4 +252,4 @@ func CreateGroupTx(t *testing.T) {
 	require.Equal(t, groupType, result.Account.Type)
 	require.NotZero(t, result.Account.ID)
 	require.NotZero(t, result.Account.CreatedAt)
-}
+}*/

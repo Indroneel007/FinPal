@@ -12,9 +12,11 @@ type Store struct {
 }
 
 type TransferTxParams struct {
-	FromAccountID int64 `json:"from_account_id"`
-	ToAccountID   int64 `json:"to_account_id"`
-	Amount        int64 `json:"amount"`
+	FromUsername string `json:"from_username"`
+	ToUsername   string `json:"to_username"`
+	Currency     string `json:"currency"`
+	Type         string `json:"type"`
+	Amount       int64  `json:"amount"`
 }
 
 type TransferTxResult struct {
@@ -59,16 +61,62 @@ func (store *Store) TransferTx(ctx context.Context, arg TransferTxParams) (Trans
 		var err error
 
 		//txName := ctx.Value(txKey)
-
+		args := GetAccountByOwnerCurrencyTypeParams{
+			Owner:    arg.FromUsername,
+			Currency: arg.Currency,
+			Type:     arg.Type,
+		}
 		//fmt.Println(txName, "create Transfer")
-		result.Transfer, err = store.CreateTransfer(ctx, CreateTransferParams(arg))
+		FromAccount, err := store.GetAccountByOwnerCurrencyType(ctx, args)
+		if err == sql.ErrNoRows {
+			// Only create if not found
+			FromAccount, err = store.CreateAccount(ctx, CreateAccountParams{
+				Owner:    arg.FromUsername,
+				Currency: arg.Currency,
+				Type:     args.Type,
+			})
+			if err != nil {
+				return fmt.Errorf("create from account: %w", err)
+			}
+		} else if err != nil {
+			return fmt.Errorf("get account: %w", err)
+		}
+
+		args = GetAccountByOwnerCurrencyTypeParams{
+			Owner:    arg.ToUsername,
+			Currency: arg.Currency,
+			Type:     arg.Type,
+		}
+		ToAccount, err := store.GetAccountByOwnerCurrencyType(ctx, args)
+		if err == sql.ErrNoRows {
+			// Only create if not found
+			ToAccount, err = store.CreateAccount(ctx, CreateAccountParams{
+				Owner:    arg.ToUsername,
+				Currency: arg.Currency,
+				Type:     args.Type,
+			})
+			if err != nil {
+				return fmt.Errorf("create to account: %w", err)
+			}
+		} else if err != nil {
+			return fmt.Errorf("get account: %w", err)
+		}
+
+		FromAccountID := FromAccount.ID
+		ToAccountID := ToAccount.ID
+
+		result.Transfer, err = store.CreateTransfer(ctx, CreateTransferParams{
+			FromAccountID: FromAccountID,
+			ToAccountID:   ToAccountID,
+			Amount:        arg.Amount,
+		})
 		if err != nil {
 			return fmt.Errorf("create transfer: %w", err)
 		}
 
 		//fmt.Println(txName, "create FromEntry")
 		result.FromEntry, err = store.CreateEntry(ctx, CreateEntryParams{
-			AccountID: arg.FromAccountID,
+			AccountID: FromAccountID,
 			Amount:    -arg.Amount,
 		})
 		if err != nil {
@@ -77,7 +125,7 @@ func (store *Store) TransferTx(ctx context.Context, arg TransferTxParams) (Trans
 
 		//fmt.Println(txName, "ToEntry")
 		result.ToEntry, err = store.CreateEntry(ctx, CreateEntryParams{
-			AccountID: arg.ToAccountID,
+			AccountID: ToAccountID,
 			Amount:    arg.Amount,
 		})
 		if err != nil {
@@ -85,20 +133,20 @@ func (store *Store) TransferTx(ctx context.Context, arg TransferTxParams) (Trans
 		}
 
 		//fmt.Println(txName, "update account1")
-		account1, err := store.GetAccountForUpdate(ctx, arg.FromAccountID)
+		account1, err := store.GetAccountForUpdate(ctx, FromAccountID)
 		if err != nil {
 			return fmt.Errorf("get account for update1: %w", err)
 		}
 
 		//fmt.Println(txName, "update account2")
-		account2, err := store.GetAccountForUpdate(ctx, arg.ToAccountID)
+		account2, err := store.GetAccountForUpdate(ctx, ToAccountID)
 		if err != nil {
 			return fmt.Errorf("get account for update2: %w", err)
 		}
 
-		if arg.FromAccountID < arg.ToAccountID {
+		if FromAccountID < ToAccountID {
 			result.FromAccount, err = store.UpdateAcount(ctx, UpdateAcountParams{
-				ID:      arg.FromAccountID,
+				ID:      FromAccountID,
 				Balance: account1.Balance - arg.Amount,
 			})
 			if err != nil {
@@ -106,13 +154,13 @@ func (store *Store) TransferTx(ctx context.Context, arg TransferTxParams) (Trans
 			}
 
 			result.ToAccount, err = store.UpdateAcount(ctx, UpdateAcountParams{
-				ID:      arg.ToAccountID,
+				ID:      ToAccountID,
 				Balance: account2.Balance + arg.Amount,
 			})
 
 		} else {
 			result.ToAccount, err = store.UpdateAcount(ctx, UpdateAcountParams{
-				ID:      arg.ToAccountID,
+				ID:      ToAccountID,
 				Balance: account2.Balance + arg.Amount,
 			})
 			if err != nil {
@@ -120,7 +168,7 @@ func (store *Store) TransferTx(ctx context.Context, arg TransferTxParams) (Trans
 			}
 
 			result.FromAccount, err = store.UpdateAcount(ctx, UpdateAcountParams{
-				ID:      arg.FromAccountID,
+				ID:      FromAccountID,
 				Balance: account1.Balance - arg.Amount,
 			})
 			if err != nil {

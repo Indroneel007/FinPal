@@ -25,11 +25,10 @@ type listAccountsRequest struct {
 }
 
 type transferRequest struct {
-	FromAccountID int64  `json:"from_account_id" binding:"required"`
-	ToAccountID   int64  `json:"to_account_id" binding:"required"`
-	Amount        int64  `json:"amount" binding:"required,min=1"`
-	Currency      string `json:"currency" binding:"required,currency"` // Use custom validator for currency
-	Type          string `json:"type" binding:"required,accountType"`  // Use custom validator for type
+	ToUsername string `json:"to_username" binding:"required"`
+	Amount     int64  `json:"amount" binding:"required,min=1"`
+	Currency   string `json:"currency" binding:"required,currency"` // Use custom validator for currency
+	Type       string `json:"type" binding:"required,accountType"`  // Use custom validator for type
 }
 
 type getAccountListByOwnerAndTypeRequest struct {
@@ -188,35 +187,12 @@ func (s *Server) createTransfer(c *gin.Context) {
 		return
 	}
 
-	fromAccount, err := s.store.GetAccount(c, req.FromAccountID)
-	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "from account not found"})
-		return
-	}
-
-	if fromAccount.Owner != payload.Username {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "you do not own the source account"})
-		return
-	}
-
-	_, err = s.store.GetAccount(c, req.ToAccountID)
-	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "destination account not found"})
-		return
-	}
-
-	if !s.ValidAccountCurrencyAndType(c, req.FromAccountID, req.Currency, req.Type) {
-		return
-	}
-
-	if !s.ValidAccountCurrencyAndType(c, req.ToAccountID, req.Currency, req.Type) {
-		return
-	}
-
 	arg := db.TransferTxParams{
-		FromAccountID: req.FromAccountID,
-		ToAccountID:   req.ToAccountID,
-		Amount:        req.Amount,
+		FromUsername: payload.Username,
+		ToUsername:   req.ToUsername,
+		Currency:     req.Currency,
+		Type:         req.Type,
+		Amount:       req.Amount,
 	}
 
 	result, err := s.store.TransferTx(c, arg)

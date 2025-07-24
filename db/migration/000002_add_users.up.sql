@@ -18,6 +18,8 @@ CREATE TABLE "locations" (
 
 ALTER TABLE "accounts" ADD FOREIGN KEY ("owner") REFERENCES "users" ("username");
 
-CREATE UNIQUE INDEX ON "accounts" ("owner", "currency");
+DROP INDEX IF EXISTS "accounts_owner_currency_idx";
+
+CREATE UNIQUE INDEX IF NOT EXISTS "accounts_owner_currency_type_idx" ON "accounts" ("owner", "currency", "type");
 
 ALTER TABLE "locations" ADD FOREIGN KEY ("username") REFERENCES "users" ("username");

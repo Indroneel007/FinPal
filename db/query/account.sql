@@ -73,3 +73,7 @@ WHERE
   owner = $1
 GROUP BY
   owner, type;
+
+-- name: GetAccountByOwnerCurrencyType :one
+SELECT * FROM accounts
+WHERE owner = $1 AND currency = $2 AND type = $3 LIMIT 1;

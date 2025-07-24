@@ -145,6 +145,33 @@ func (q *Queries) GetAccountByGroupIDAndOwner(ctx context.Context, arg GetAccoun
 	return i, err
 }
 
+const getAccountByOwnerCurrencyType = `-- name: GetAccountByOwnerCurrencyType :one
+SELECT id, owner, balance, currency, type, group_id, has_accepted, created_at FROM accounts
+WHERE owner = $1 AND currency = $2 AND type = $3 LIMIT 1
+`
+
+type GetAccountByOwnerCurrencyTypeParams struct {
+	Owner    string `json:"owner"`
+	Currency string `json:"currency"`
+	Type     string `json:"type"`
+}
+
+func (q *Queries) GetAccountByOwnerCurrencyType(ctx context.Context, arg GetAccountByOwnerCurrencyTypeParams) (Account, error) {
+	row := q.db.QueryRowContext(ctx, getAccountByOwnerCurrencyType, arg.Owner, arg.Currency, arg.Type)
+	var i Account
+	err := row.Scan(
+		&i.ID,
+		&i.Owner,
+		&i.Balance,
+		&i.Currency,
+		&i.Type,
+		&i.GroupID,
+		&i.HasAccepted,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
 const getAccountForUpdate = `-- name: GetAccountForUpdate :one
 SELECT id, owner, balance, currency, type, group_id, has_accepted, created_at FROM accounts
 WHERE id = $1 LIMIT 1
