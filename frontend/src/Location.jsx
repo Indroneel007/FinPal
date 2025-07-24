@@ -95,8 +95,8 @@ export default function Location() {
         setLoading(false);
         return;
       }
-      // Success: redirect to landing page
-      navigate('/');
+      // Success: redirect to main page
+      navigate('/main', { state: { access_token: accessToken, username } });
     } catch (err) {
       setError('Network error: ' + err.message);
     } finally {

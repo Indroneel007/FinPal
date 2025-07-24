@@ -20,3 +20,7 @@ UPDATE users
 SET hashed_password = $2
 WHERE username = $1
 RETURNING *;
+
+-- name: GetAccountsByUser :many
+SELECT id FROM accounts
+WHERE owner = $1;

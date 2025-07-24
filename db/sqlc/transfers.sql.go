@@ -7,6 +7,7 @@ package db
 
 import (
 	"context"
+	"time"
 )
 
 const createTransfer = `-- name: CreateTransfer :one
@@ -81,6 +82,46 @@ func (q *Queries) ListTransfers(ctx context.Context, arg ListTransfersParams) ([
 			&i.Amount,
 			&i.CreatedAt,
 		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listTransfersBetweenAccounts = `-- name: ListTransfersBetweenAccounts :many
+SELECT amount, created_at
+FROM transfers
+WHERE (from_account_id = ANY($1) AND to_account_id = ANY($2))
+ORDER BY created_at DESC
+`
+
+type ListTransfersBetweenAccountsParams struct {
+	FromAccountID []int64 `json:"from_account_id"`
+	ToAccountID   []int64 `json:"to_account_id"`
+}
+
+type ListTransfersBetweenAccountsRow struct {
+	Amount    int64     `json:"amount"`
+	CreatedAt time.Time `json:"created_at"`
+}
+
+func (q *Queries) ListTransfersBetweenAccounts(ctx context.Context, arg ListTransfersBetweenAccountsParams) ([]ListTransfersBetweenAccountsRow, error) {
+	rows, err := q.db.QueryContext(ctx, listTransfersBetweenAccounts, arg.FromAccountID, arg.ToAccountID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListTransfersBetweenAccountsRow
+	for rows.Next() {
+		var i ListTransfersBetweenAccountsRow
+		if err := rows.Scan(&i.Amount, &i.CreatedAt); err != nil {
 			return nil, err
 		}
 		items = append(items, i)

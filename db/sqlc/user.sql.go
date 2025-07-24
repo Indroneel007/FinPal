@@ -47,6 +47,34 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 	return i, err
 }
 
+const getAccountsByUser = `-- name: GetAccountsByUser :many
+SELECT id FROM accounts
+WHERE owner = $1
+`
+
+func (q *Queries) GetAccountsByUser(ctx context.Context, owner string) ([]int64, error) {
+	rows, err := q.db.QueryContext(ctx, getAccountsByUser, owner)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []int64
+	for rows.Next() {
+		var id int64
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		items = append(items, id)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getUser = `-- name: GetUser :one
 SELECT username, hashed_password, full_name, email, salary, password_changed_at, created_at FROM users
 WHERE username = $1 LIMIT 1

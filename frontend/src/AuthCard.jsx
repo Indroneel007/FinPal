@@ -2,7 +2,7 @@ import { motion } from 'framer-motion';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-export default function AuthCard({ mode, onClose, onSwitch }) {
+export default function AuthCard({ mode, onClose, onSwitch, setUsername }) {
   const navigate = useNavigate();
   const [form, setForm] = useState({ username: '', email: '', password: '', confirmPassword: '', fullName: '', salary: '' });
 
@@ -29,6 +29,11 @@ export default function AuthCard({ mode, onClose, onSwitch }) {
         }
         const data = await res.json();
         alert('Login successful!');
+        localStorage.setItem('access_token', data.access_token);
+        localStorage.setItem('username', form.username);
+        setUsername(form.username);
+        // Redirect to main page with token and username
+        navigate('/main', { state: { access_token: data.access_token, username: form.username } });
         onClose();
         // Optionally: store token, update user state, etc.
       } catch (err) {
@@ -63,6 +68,9 @@ export default function AuthCard({ mode, onClose, onSwitch }) {
         }
         const data = await res.json();
         // Redirect to location page with access token
+        localStorage.setItem('access_token', data.access_token);
+        localStorage.setItem('username', form.username);
+        setUsername(form.username);
         navigate('/location', { state: { access_token: data.access_token, username: form.username } });
         onClose();
       } catch (err) {

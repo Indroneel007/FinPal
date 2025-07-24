@@ -38,6 +38,15 @@ type getAccountListByOwnerAndTypeRequest struct {
 	PageSize int32  `form:"page_size" binding:"required,min=1,max=5"`
 }
 
+type getTransferBetweenUserRequest struct {
+	Username string `uri:"username" binding:"required"`
+}
+
+type getTransferBetweenUserResponse struct {
+	Paid     []db.ListTransfersBetweenAccountsRow `json:"paid"`
+	Received []db.ListTransfersBetweenAccountsRow `json:"received"`
+}
+
 func (s *Server) createAccount(c *gin.Context) {
 	var req accountRequest
 
@@ -286,4 +295,83 @@ func (s *Server) getAccountListByOwnerAndType(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, accounts)
+}
+
+func (s *Server) getTransferBetweenUser(c *gin.Context) {
+	var req getTransferBetweenUserRequest
+	err := c.ShouldBindUri(&req)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, NewError(err))
+		return
+	}
+
+	payloadData, exists := c.Get(authorizationPayloadKey)
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Authorization payload not found"})
+		return
+	}
+
+	payload, ok := payloadData.(*util.Payload)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid authorization payload"})
+		return
+	}
+
+	myAccounts, err := s.store.GetAccountsByUser(c, payload.Username)
+	if err != nil {
+		if apiErr := convertToApiErr(err); apiErr != nil {
+			c.JSON(http.StatusUnprocessableEntity, NewValidationError(apiErr))
+			return
+		}
+		c.JSON(http.StatusInternalServerError, NewError(err))
+		return
+	}
+
+	otherAccounts, err := s.store.GetAccountsByUser(c, req.Username)
+	if err != nil {
+		if apiErr := convertToApiErr(err); apiErr != nil {
+			c.JSON(http.StatusUnprocessableEntity, NewValidationError(apiErr))
+			return
+		}
+		c.JSON(http.StatusInternalServerError, NewError(err))
+		return
+	}
+
+	if len(myAccounts) == 0 || len(otherAccounts) == 0 {
+		c.JSON(http.StatusOK, []interface{}{})
+		return
+	}
+
+	Paid, err := s.store.ListTransfersBetweenAccounts(c, db.ListTransfersBetweenAccountsParams{
+		FromAccountID: myAccounts,
+		ToAccountID:   otherAccounts,
+	})
+	if err != nil {
+		if apiErr := convertToApiErr(err); apiErr != nil {
+			c.JSON(http.StatusUnprocessableEntity, NewValidationError(apiErr))
+			return
+		}
+		c.JSON(http.StatusInternalServerError, NewError(err))
+		return
+	}
+
+	Received, err := s.store.ListTransfersBetweenAccounts(c, db.ListTransfersBetweenAccountsParams{
+		FromAccountID: otherAccounts,
+		ToAccountID:   myAccounts,
+	})
+	if err != nil {
+		if apiErr := convertToApiErr(err); apiErr != nil {
+			c.JSON(http.StatusUnprocessableEntity, NewValidationError(apiErr))
+			return
+		}
+		c.JSON(http.StatusInternalServerError, NewError(err))
+		return
+	}
+
+	response := getTransferBetweenUserResponse{
+		Paid:     Paid,
+		Received: Received,
+	}
+
+	c.JSON(http.StatusOK, response)
 }

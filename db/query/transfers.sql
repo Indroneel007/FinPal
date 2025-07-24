@@ -12,3 +12,9 @@ SELECT * FROM transfers
 WHERE from_account_id = $1 OR to_account_id = $1
 ORDER BY id DESC
 LIMIT $2 OFFSET $3;
+
+-- name: ListTransfersBetweenAccounts :many
+SELECT amount, created_at
+FROM transfers
+WHERE (from_account_id = ANY($1) AND to_account_id = ANY($2))
+ORDER BY created_at DESC;
