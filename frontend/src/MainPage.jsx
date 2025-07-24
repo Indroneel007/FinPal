@@ -1,5 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import UserTransferModal from './UserTransferModal';
+import { MOCK_USERS } from './mockUsers';
+import AddUserTransferModal from './AddUserTransferModal';
+import Navbar from './Navbar';
+
 
 export default function MainPage() {
   const location = useLocation();
@@ -12,7 +17,25 @@ export default function MainPage() {
   const [error, setError] = useState('');
   const [page, setPage] = useState(1);
   const [historyModal, setHistoryModal] = useState({ open: false, username: '', paid: [], received: [], loading: false, error: '' });
+  // User search and transfer modal state
+  const [userQuery, setUserQuery] = useState('');
+  const [userResults, setUserResults] = useState([]);
+  const [transferModal, setTransferModal] = useState({ open: false, toUsername: '', loading: false, error: '' });
   const pageSize = 5;
+
+  // User search effect
+  useEffect(() => {
+    if (userQuery.length < 2) {
+      setUserResults([]);
+      return;
+    }
+    // For now use mock user list; filter and exclude self
+    setUserResults(
+      MOCK_USERS.filter(
+        (u) => u.toLowerCase().includes(userQuery.toLowerCase()) && u !== username
+      )
+    );
+  }, [userQuery, username]);
 
   useEffect(() => {
     if (!accessToken) {
@@ -59,6 +82,16 @@ export default function MainPage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-purple-900 via-blue-900 to-gray-900 p-8">
+      <Navbar username={username} showLogin={false} />
+      <div className="mt-8 mb-6 flex justify-end w-full">
+        <AddUserTransferModal
+          accessToken={accessToken}
+          onTransferSuccess={() => {
+            setPage(1);
+            setLoading(true);
+          }}
+        />
+      </div>
       {loading ? (
         <div className="text-white text-center">Loading accounts...</div>
       ) : error ? (
@@ -193,4 +226,3 @@ export default function MainPage() {
     </div>
   );
 }
-

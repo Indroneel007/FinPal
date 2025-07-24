@@ -90,7 +90,7 @@ func (s *Server) MountHandlers() {
 	public.GET("/tests", s.TestRoute)
 	public.POST("/forgotpassword", s.forgotPassword)
 	public.POST("/login", s.loginUser)
-
+	public.GET("/users/:username", s.getOtherUser)
 	// Authenticated routes
 	auth.POST("/accounts", s.createAccount)
 	auth.GET("/accounts", s.listAccounts)

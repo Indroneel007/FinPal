@@ -16,7 +16,30 @@ function App() {
 
   return (
     <div className="min-h-screen w-full relative overflow-x-hidden">
-      <Navbar onLogin={() => setAuthMode('login')} username={username} />
+      <Routes>
+        <Route
+          path="/"
+          element={
+            <>
+              <Navbar onLogin={() => setAuthMode('login')} username={username} showLogin={true} />
+              <LandingSection />
+              {authMode && (
+                <AuthCard
+                  mode={authMode}
+                  onClose={() => setAuthMode(null)}
+                  onSwitch={() => setAuthMode(authMode === 'login' ? 'register' : 'login')}
+                  setUsername={setUsername}
+                />
+              )}
+            </>
+          }
+        />
+        <Route path="/forgot-password" element={<><Navbar username={username} showLogin={false} /><ForgotPassword /></>} />
+        <Route path="/otp-verify" element={<><Navbar username={username} showLogin={false} /><OtpVerify /></>} />
+        <Route path="/reset-password" element={<><Navbar username={username} showLogin={false} /><ResetPassword /></>} />
+        <Route path="/location" element={<><Navbar username={username} showLogin={false} /><Location /></>} />
+        <Route path="/main" element={<MainPage />} />
+      </Routes>
       <Routes>
         <Route
           path="/"

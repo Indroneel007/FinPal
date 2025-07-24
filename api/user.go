@@ -58,6 +58,24 @@ type resetPasswordRequest struct {
 	NewPassword string `json:"new_password" binding:"required"`
 }
 
+type getOtherUserRequest struct {
+	Username string `uri:"username" binding:"required,alphanum,min=3,max=20"`
+}
+
+type getOtherUserResponse struct {
+	Username string `json:"username"`
+	FullName string `json:"full_name"`
+	Email    string `json:"email"`
+}
+
+func OtherUserResponse(user db.User) getOtherUserResponse {
+	return getOtherUserResponse{
+		Username: user.Username,
+		FullName: user.FullName,
+		Email:    user.Email,
+	}
+}
+
 func UserResponse(user db.User) userResponse {
 	return userResponse{
 		Username:          user.Username,
@@ -180,6 +198,32 @@ func (s *Server) getUser(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, user)
+}
+
+func (s *Server) getOtherUser(c *gin.Context) {
+	var req getOtherUserRequest
+
+	if err := c.ShouldBindUri(&req); err != nil {
+		log.Printf("Error binding URI: %v", err)
+		c.JSON(http.StatusBadRequest, NewError(err))
+		return
+	}
+
+	log.Printf("Looking up user: %s", req.Username)
+
+	user, err := s.store.GetUser(c, req.Username)
+	if err != nil {
+		log.Printf("Error getting user %s: %v", req.Username, err)
+		if apiErr := convertToApiErr(err); apiErr != nil {
+			c.JSON(http.StatusUnprocessableEntity, NewValidationError(apiErr))
+			return
+		}
+		c.JSON(http.StatusInternalServerError, NewError(err))
+		return
+	}
+
+	log.Printf("Found user: %+v", user)
+	c.JSON(http.StatusOK, OtherUserResponse(user))
 }
 
 func (s *Server) loginUser(c *gin.Context) {
