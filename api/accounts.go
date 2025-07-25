@@ -5,6 +5,7 @@ import (
 	db "examples/SimpleBankProject/db/sqlc"
 	"examples/SimpleBankProject/util"
 	"fmt"
+	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -350,4 +351,52 @@ func (s *Server) getTransferBetweenUser(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, response)
+}
+
+type listTransactedUsersWithTotalsRequest struct {
+	PageID   int32 `form:"page_id" binding:"required,min=1"`
+	PageSize int32 `form:"page_size" binding:"required,min=1,max=5"`
+}
+
+func (s *Server) listTransactedUsersWithTotals(c *gin.Context) {
+	var req listTransactedUsersWithTotalsRequest
+
+	err := c.ShouldBindQuery(&req)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, NewError(err))
+		return
+	}
+	fmt.Println("Query binded successfully")
+
+	payloadData, exists := c.Get(authorizationPayloadKey)
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Authorization payload not found"})
+		return
+	}
+
+	log.Println("Authorization payload found")
+	payload, ok := payloadData.(*util.Payload)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid authorization payload"})
+		return
+	}
+
+	fmt.Println("Authorization payload validated successfully")
+
+	users, err := s.store.ListTransactedUsersWithTotals(c, db.ListTransactedUsersWithTotalsParams{
+		Owner:  payload.Username,
+		Limit:  req.PageSize,
+		Offset: (req.PageID - 1) * req.PageSize,
+	})
+	if err != nil {
+		if apiErr := convertToApiErr(err); apiErr != nil {
+			c.JSON(http.StatusUnprocessableEntity, NewValidationError(apiErr))
+			return
+		}
+		c.JSON(http.StatusInternalServerError, NewError(err))
+		return
+	}
+
+	fmt.Println("Users fetched successfully")
+	c.JSON(http.StatusOK, users)
 }

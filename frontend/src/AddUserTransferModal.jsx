@@ -1,7 +1,7 @@
 import { useState } from 'react';
 
-const SUPPORTED_CURRENCIES = ['INR', 'USD', 'EUR'];
-const SUPPORTED_TYPES = ['savings', 'checking', 'cash', 'credit'];
+const SUPPORTED_CURRENCIES = ['USD', 'Euros', 'Rupees'];
+const SUPPORTED_TYPES = ['rent', 'food', 'travel', 'savings', 'bills','medical','shopping','misc'];
 
 export default function AddUserTransferModal({ accessToken, onTransferSuccess }) {
   const [open, setOpen] = useState(false);

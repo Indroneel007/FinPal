@@ -377,6 +377,66 @@ func (q *Queries) ListAccountsByOwner(ctx context.Context, arg ListAccountsByOwn
 	return items, nil
 }
 
+const listTransactedUsersWithTotals = `-- name: ListTransactedUsersWithTotals :many
+SELECT
+    other_user::text AS username,
+    COALESCE(SUM(CASE WHEN sub.from_account_id = sub.a_id THEN sub.amount END), 0)::bigint AS total_sent,
+    COALESCE(SUM(CASE WHEN sub.to_account_id = sub.a_id THEN sub.amount END), 0)::bigint AS total_received
+FROM (
+    SELECT
+        CASE
+            WHEN t.from_account_id = a.id THEN a2.owner
+            ELSE a.owner
+        END AS other_user,
+        t.from_account_id,
+        t.to_account_id,
+        t.amount,
+        a.id AS a_id
+    FROM transfers t
+    JOIN accounts a ON a.owner = $1
+    JOIN accounts a2 ON a2.id = t.to_account_id
+    WHERE t.from_account_id = a.id OR t.to_account_id = a.id
+) sub
+GROUP BY other_user
+ORDER BY other_user
+LIMIT $2 OFFSET $3
+`
+
+type ListTransactedUsersWithTotalsParams struct {
+	Owner  string `json:"owner"`
+	Limit  int32  `json:"limit"`
+	Offset int32  `json:"offset"`
+}
+
+type ListTransactedUsersWithTotalsRow struct {
+	Username      string `json:"username"`
+	TotalSent     int64  `json:"total_sent"`
+	TotalReceived int64  `json:"total_received"`
+}
+
+func (q *Queries) ListTransactedUsersWithTotals(ctx context.Context, arg ListTransactedUsersWithTotalsParams) ([]ListTransactedUsersWithTotalsRow, error) {
+	rows, err := q.db.QueryContext(ctx, listTransactedUsersWithTotals, arg.Owner, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListTransactedUsersWithTotalsRow
+	for rows.Next() {
+		var i ListTransactedUsersWithTotalsRow
+		if err := rows.Scan(&i.Username, &i.TotalSent, &i.TotalReceived); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const updateAccountGroup = `-- name: UpdateAccountGroup :one
 UPDATE accounts
   set group_id = NULL

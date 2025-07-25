@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import UserTransferModal from './UserTransferModal';
 import { MOCK_USERS } from './mockUsers';
@@ -12,7 +12,7 @@ export default function MainPage() {
   // Try to get token and username from navigation state or fallback to global state if implemented
   const accessToken = location.state?.access_token || localStorage.getItem('access_token');
   const username = location.state?.username || localStorage.getItem('username');
-  const [accounts, setAccounts] = useState([]);
+  const [userTransactions, setUserTransactions] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [page, setPage] = useState(1);
@@ -37,31 +37,47 @@ export default function MainPage() {
     );
   }, [userQuery, username]);
 
-  useEffect(() => {
+  const fetchUserTransactions = useCallback(async () => {
     if (!accessToken) {
       setError('Missing access token. Please login again.');
       setLoading(false);
       return;
     }
-    setLoading(true);
-    fetch(`http://localhost:9090/accounts?page_id=${page}&page_size=${pageSize}`, {
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-      },
-    })
-      .then((res) => {
-        if (!res.ok) throw new Error('Failed to fetch accounts');
-        return res.json();
-      })
-      .then((data) => {
-        setAccounts(Array.isArray(data) ? data : []);
-        setLoading(false);
-      })
-      .catch((err) => {
-        setError(err.message);
-        setLoading(false);
+    try {
+      setLoading(true);
+      const res = await fetch(`http://localhost:9090/transfers/user?page_id=${page}&page_size=${pageSize}`, {
+        headers: { 'Authorization': `Bearer ${accessToken}` }
       });
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to fetch users with transactions');
+      }
+      const users = await res.json();
+      if (!users || users.length === 0) {
+        setUserTransactions({});
+        return;
+      }
+      // Map to object for easier access by username
+      const transactionsByUser = {};
+      users.forEach(user => {
+        transactionsByUser[user.username] = {
+          username: user.username,
+          total_sent: user.total_sent,
+          total_received: user.total_received
+        };
+      });
+      setUserTransactions(transactionsByUser);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
   }, [accessToken, page]);
+
+  // Fetch all users with transactions
+  useEffect(() => {
+    fetchUserTransactions();
+  }, [fetchUserTransactions, page]);
 
   if (!accessToken || !username) {
     return (
@@ -83,12 +99,15 @@ export default function MainPage() {
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-purple-900 via-blue-900 to-gray-900 p-8">
       <Navbar username={username} showLogin={false} />
-      <div className="mt-8 mb-6 flex justify-end w-full">
+      <div className="mt-8 mb-6 flex justify-between items-center w-full">
+        <h1 className="text-2xl font-bold text-white">Your Transactions</h1>
         <AddUserTransferModal
           accessToken={accessToken}
           onTransferSuccess={() => {
             setPage(1);
             setLoading(true);
+            // Refetch transactions after successful transfer
+            fetchUserTransactions();
           }}
         />
       </div>
@@ -98,56 +117,63 @@ export default function MainPage() {
         <div className="text-red-400 text-center">{error}</div>
       ) : (
         <div className="flex-1">
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 mx-auto max-w-5xl pt-4">
-            {accounts.length === 0 ? (
-              <div className="col-span-full text-white text-center">No accounts found.</div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mx-auto max-w-7xl pt-4">
+            {Object.keys(userTransactions).length === 0 ? (
+              <div className="col-span-full text-white text-center">No transactions found. Send or receive money to see transaction history.</div>
             ) : (
-              accounts.map((acc) => (
-                <div key={acc.id} className="bg-gray-800 rounded-xl shadow-lg p-6 flex flex-col gap-2 border border-gray-700 w-full max-w-lg mx-auto">
-                  <div className="flex items-center justify-between mb-2">
-                    <span
-                      className={`text-lg font-semibold cursor-pointer underline text-blue-300 hover:text-blue-400 transition`}
-                      title={acc.owner === username ? 'Your account' : `View transfers with ${acc.owner}`}
+              Object.values(userTransactions)
+                .map((user) => {
+                  const totalSent = user.total_sent || 0;
+                  const totalReceived = user.total_received || 0;
+                  const netAmount = totalReceived - totalSent;
+                  return (
+                    <div 
+                      key={user.username}
+                      className="bg-gray-800 rounded-xl shadow-lg p-6 flex flex-col gap-3 border border-gray-700 hover:border-blue-500 transition-colors cursor-pointer"
                       onClick={() => {
-                        if (acc.owner === username) return;
-                        setHistoryModal((prev) => ({ ...prev, open: true, username: acc.owner, paid: [], received: [], loading: true, error: '' }));
-                        fetch(`http://localhost:9090/transfers/${acc.owner}`, {
-                          headers: { 'Authorization': `Bearer ${accessToken}` }
-                        })
-                          .then(res => {
-                            if (!res.ok) throw new Error('Failed to fetch transfer history');
-                            return res.json();
-                          })
-                          .then(data => {
-                            setHistoryModal((prev) => ({ ...prev, paid: data.paid, received: data.received, loading: false, error: '' }));
-                          })
-                          .catch(err => {
-                            setHistoryModal((prev) => ({ ...prev, loading: false, error: err.message }));
-                          });
+                        setHistoryModal({
+                          open: true,
+                          username: user.username,
+                          paid: user.paid,
+                          loading: false,
+                          error: ''
+                        });
                       }}
                     >
-                      {acc.owner === username ? 'You' : acc.owner}
-                    </span>
-                    <span className="text-sm text-gray-400">ID: {acc.id}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-2xl font-bold text-green-400">₹{acc.balance}</span>
-                    <span className="text-sm text-gray-400">{acc.currency}</span>
-                  </div>
-                  <div className="flex items-center justify-between mt-2">
-                    <span className="text-sm text-blue-400">Type: {acc.type}</span>
-                    {acc.group_id && acc.group_id.Valid && (
-                      <span className="text-sm text-pink-400">Group: {acc.group_id.Int64}</span>
-                    )}
-                    {acc.has_accepted !== undefined && (
-                      <span className={`text-xs font-bold rounded px-2 py-1 ${acc.has_accepted ? 'bg-green-700 text-green-200' : 'bg-yellow-700 text-yellow-200'}`}>
-                        {acc.has_accepted ? 'Accepted' : 'Pending'}
-                      </span>
-                    )}
-                  </div>
-                  <div className="text-xs text-gray-500 mt-2">Created: {new Date(acc.created_at).toLocaleString()}</div>
-                </div>
-              ))
+                      <div className="flex items-center justify-between mb-2">
+                        <h3 className="text-xl font-bold text-blue-300">
+                          {user.username}
+                        </h3>
+                        <span className={`text-lg font-bold ${netAmount >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                          {netAmount >= 0 ? '+' : ''}{netAmount.toLocaleString('en-IN')} ₹
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-sm text-gray-400">
+                        <div>
+                          <div className="text-red-400">Sent: -₹{totalSent.toLocaleString('en-IN')}</div>
+                          <div className="text-green-400">Received: +₹{totalReceived.toLocaleString('en-IN')}</div>
+                        </div>
+                      </div>
+                      <div className="mt-3 pt-2 border-t border-gray-700">
+                        <button
+                          className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            // Open transfer modal with this user
+                            setTransferModal({
+                              open: true,
+                              toUsername: user.username,
+                              loading: false,
+                              error: ''
+                            });
+                          }}
+                        >
+                          Send Money
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })
             )}
           </div>
         </div>
@@ -165,7 +191,7 @@ export default function MainPage() {
         <button
           className="px-4 py-2 rounded bg-gray-700 text-white"
           onClick={() => setPage((p) => p + 1)}
-          disabled={accounts.length < pageSize}
+          disabled={Object.keys(userTransactions).length < pageSize} 
         >
           Next
         </button>
@@ -188,31 +214,43 @@ export default function MainPage() {
               <div className="text-red-400 text-center">{historyModal.error}</div>
             ) : (
               <>
-                <div className="mb-4">
-                  <h3 className="text-md font-semibold text-green-400 mb-2">Paid</h3>
+                <div className="mb-6">
+                  <h3 className="text-md font-semibold text-red-400 mb-2">Sent Money</h3>
                   {historyModal.paid.length === 0 ? (
                     <div className="text-gray-400 text-sm">No payments made to this user.</div>
                   ) : (
-                    <ul className="space-y-1">
+                    <ul className="space-y-2">
                       {historyModal.paid.map((t, idx) => (
-                        <li key={idx} className="flex justify-between text-sm">
-                          <span>₹{t.amount}</span>
-                          <span className="text-gray-400">{new Date(t.created_at).toLocaleString()}</span>
+                        <li key={idx} className="flex flex-col p-3 bg-gray-800 rounded-lg">
+                          <div className="flex justify-between items-center">
+                            <span className="text-red-300 font-medium">To: {t.to_username || 'Unknown'}</span>
+                            <span className="text-red-400 font-bold">-₹{t.amount}</span>
+                          </div>
+                          <div className="flex justify-between text-xs text-gray-400 mt-1">
+                            <span>{t.type}</span>
+                            <span>{new Date(t.created_at).toLocaleString()}</span>
+                          </div>
                         </li>
                       ))}
                     </ul>
                   )}
                 </div>
-                <div>
-                  <h3 className="text-md font-semibold text-blue-400 mb-2">Received</h3>
+                <div className="mt-6">
+                  <h3 className="text-md font-semibold text-green-400 mb-2">Received Money</h3>
                   {historyModal.received.length === 0 ? (
                     <div className="text-gray-400 text-sm">No payments received from this user.</div>
                   ) : (
-                    <ul className="space-y-1">
+                    <ul className="space-y-2">
                       {historyModal.received.map((t, idx) => (
-                        <li key={idx} className="flex justify-between text-sm">
-                          <span>₹{t.amount}</span>
-                          <span className="text-gray-400">{new Date(t.created_at).toLocaleString()}</span>
+                        <li key={idx} className="flex flex-col p-3 bg-gray-800 rounded-lg">
+                          <div className="flex justify-between items-center">
+                            <span className="text-green-300 font-medium">From: {t.from_username || 'Unknown'}</span>
+                            <span className="text-green-400 font-bold">+₹{t.amount}</span>
+                          </div>
+                          <div className="flex justify-between text-xs text-gray-400 mt-1">
+                            <span>{t.type}</span>
+                            <span>{new Date(t.created_at).toLocaleString()}</span>
+                          </div>
                         </li>
                       ))}
                     </ul>

@@ -77,3 +77,27 @@ GROUP BY
 -- name: GetAccountByOwnerCurrencyType :one
 SELECT * FROM accounts
 WHERE owner = $1 AND currency = $2 AND type = $3 LIMIT 1;
+
+-- name: ListTransactedUsersWithTotals :many
+SELECT
+    other_user::text AS username,
+    COALESCE(SUM(CASE WHEN sub.from_account_id = sub.a_id THEN sub.amount END), 0)::bigint AS total_sent,
+    COALESCE(SUM(CASE WHEN sub.to_account_id = sub.a_id THEN sub.amount END), 0)::bigint AS total_received
+FROM (
+    SELECT
+        CASE
+            WHEN t.from_account_id = a.id THEN a2.owner
+            ELSE a.owner
+        END AS other_user,
+        t.from_account_id,
+        t.to_account_id,
+        t.amount,
+        a.id AS a_id
+    FROM transfers t
+    JOIN accounts a ON a.owner = $1
+    JOIN accounts a2 ON a2.id = t.to_account_id
+    WHERE t.from_account_id = a.id OR t.to_account_id = a.id
+) sub
+GROUP BY other_user
+ORDER BY other_user
+LIMIT $2 OFFSET $3;

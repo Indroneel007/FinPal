@@ -101,7 +101,7 @@ func (s *Server) MountHandlers() {
 	auth.POST("/resetpassword", s.resetPassword)
 	auth.GET("/accountsbytype", s.getAccountListByOwnerAndType)
 	auth.GET("/transfers/:username", s.getTransferBetweenUser)
-
+	auth.GET("/transfers/user", s.listTransactedUsersWithTotals)
 	//Groups Routes
 	auth.POST("/groups", s.createGroup)
 	auth.GET("/groups", s.listGroups)
