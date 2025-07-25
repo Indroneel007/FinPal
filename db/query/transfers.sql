@@ -14,7 +14,13 @@ ORDER BY id DESC
 LIMIT $2 OFFSET $3;
 
 -- name: ListTransfersBetweenAccounts :many
-SELECT amount, created_at
-FROM transfers
-WHERE (from_account_id = ANY($1) AND to_account_id = ANY($2))
-ORDER BY created_at DESC;
+SELECT 
+  t.amount, 
+  t.created_at, 
+  t.from_account_id, 
+  t.to_account_id,
+  a.type
+FROM transfers t
+JOIN accounts a ON a.id = t.from_account_id
+WHERE (t.from_account_id = ANY($1::bigint[]) AND t.to_account_id = ANY($2::bigint[]))
+ORDER BY t.created_at DESC;

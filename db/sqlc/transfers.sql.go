@@ -8,6 +8,8 @@ package db
 import (
 	"context"
 	"time"
+
+	"github.com/lib/pq"
 )
 
 const createTransfer = `-- name: CreateTransfer :one
@@ -96,24 +98,33 @@ func (q *Queries) ListTransfers(ctx context.Context, arg ListTransfersParams) ([
 }
 
 const listTransfersBetweenAccounts = `-- name: ListTransfersBetweenAccounts :many
-SELECT amount, created_at
-FROM transfers
-WHERE (from_account_id = ANY($1) AND to_account_id = ANY($2))
-ORDER BY created_at DESC
+SELECT 
+  t.amount, 
+  t.created_at, 
+  t.from_account_id, 
+  t.to_account_id,
+  a.type
+FROM transfers t
+JOIN accounts a ON a.id = t.from_account_id
+WHERE (t.from_account_id = ANY($1::bigint[]) AND t.to_account_id = ANY($2::bigint[]))
+ORDER BY t.created_at DESC
 `
 
 type ListTransfersBetweenAccountsParams struct {
-	FromAccountID []int64 `json:"from_account_id"`
-	ToAccountID   []int64 `json:"to_account_id"`
+	Column1 []int64 `json:"column_1"`
+	Column2 []int64 `json:"column_2"`
 }
 
 type ListTransfersBetweenAccountsRow struct {
-	Amount    int64     `json:"amount"`
-	CreatedAt time.Time `json:"created_at"`
+	Amount        int64     `json:"amount"`
+	CreatedAt     time.Time `json:"created_at"`
+	FromAccountID int64     `json:"from_account_id"`
+	ToAccountID   int64     `json:"to_account_id"`
+	Type          string    `json:"type"`
 }
 
 func (q *Queries) ListTransfersBetweenAccounts(ctx context.Context, arg ListTransfersBetweenAccountsParams) ([]ListTransfersBetweenAccountsRow, error) {
-	rows, err := q.db.QueryContext(ctx, listTransfersBetweenAccounts, arg.FromAccountID, arg.ToAccountID)
+	rows, err := q.db.QueryContext(ctx, listTransfersBetweenAccounts, pq.Array(arg.Column1), pq.Array(arg.Column2))
 	if err != nil {
 		return nil, err
 	}
@@ -121,7 +132,13 @@ func (q *Queries) ListTransfersBetweenAccounts(ctx context.Context, arg ListTran
 	var items []ListTransfersBetweenAccountsRow
 	for rows.Next() {
 		var i ListTransfersBetweenAccountsRow
-		if err := rows.Scan(&i.Amount, &i.CreatedAt); err != nil {
+		if err := rows.Scan(
+			&i.Amount,
+			&i.CreatedAt,
+			&i.FromAccountID,
+			&i.ToAccountID,
+			&i.Type,
+		); err != nil {
 			return nil, err
 		}
 		items = append(items, i)

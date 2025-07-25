@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import UserTotalsCard from './UserTotalsCard';
 import UserTransferModal from './UserTransferModal';
 import { MOCK_USERS } from './mockUsers';
 import AddUserTransferModal from './AddUserTransferModal';
@@ -98,19 +99,49 @@ export default function MainPage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-purple-900 via-blue-900 to-gray-900 p-8">
-      <Navbar username={username} showLogin={false} />
-      <div className="mt-8 mb-6 flex justify-between items-center w-full">
-        <h1 className="text-2xl font-bold text-white">Your Transactions</h1>
+      {transferModal.open && (
         <AddUserTransferModal
           accessToken={accessToken}
-          onTransferSuccess={() => {
-            setPage(1);
-            setLoading(true);
-            // Refetch transactions after successful transfer
+          toUsername={transferModal.toUsername}
+          onTransferSuccess={async () => {
+            setTransferModal({ open: false, toUsername: '', loading: false, error: '' });
+            if (historyModal.username) {
+              setHistoryModal((prev) => ({ ...prev, loading: true }));
+              try {
+                const res = await fetch(`http://localhost:9090/transfers/${historyModal.username}`, {
+                  headers: { 'Authorization': `Bearer ${accessToken}` }
+                });
+                if (!res.ok) {
+                  const errorData = await res.json().catch(() => ({}));
+                  throw new Error(errorData.error || 'Failed to fetch transaction history');
+                }
+                const data = await res.json();
+                setHistoryModal({
+                  open: true,
+                  username: historyModal.username,
+                  paid: data.paid || [],
+                  received: data.received || [],
+                  loading: false,
+                  error: ''
+                });
+              } catch (err) {
+                setHistoryModal((prev) => ({ ...prev, loading: false, error: err.message || 'Failed to fetch transaction history' }));
+              }
+            }
             fetchUserTransactions();
           }}
         />
+      )}
+      <Navbar username={username} showLogin={false} />
+      <div className="flex flex-col gap-4 mt-6 mb-6 w-full">
+        <button
+          className="self-end px-5 py-2.5 rounded-lg bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold shadow hover:from-blue-600 hover:to-purple-700 transition-colors"
+          onClick={() => setTransferModal({ open: true, toUsername: '', loading: false, error: '' })}
+        >
+          + Add User
+        </button>
       </div>
+        
       {loading ? (
         <div className="text-white text-center">Loading accounts...</div>
       ) : error ? (
@@ -122,58 +153,48 @@ export default function MainPage() {
               <div className="col-span-full text-white text-center">No transactions found. Send or receive money to see transaction history.</div>
             ) : (
               Object.values(userTransactions)
-                .map((user) => {
-                  const totalSent = user.total_sent || 0;
-                  const totalReceived = user.total_received || 0;
-                  const netAmount = totalReceived - totalSent;
-                  return (
-                    <div 
-                      key={user.username}
-                      className="bg-gray-800 rounded-xl shadow-lg p-6 flex flex-col gap-3 border border-gray-700 hover:border-blue-500 transition-colors cursor-pointer"
-                      onClick={() => {
+                .filter((user) => user.username !== username)
+                .map((user) => (
+                  <UserTotalsCard
+                    key={user.username}
+                    username={user.username}
+                    accessToken={accessToken}
+                    onClick={async () => {
+                      setHistoryModal({
+                        open: true,
+                        username: user.username,
+                        paid: [],
+                        received: [],
+                        loading: true,
+                        error: ''
+                      });
+                      try {
+                        const res = await fetch(`http://localhost:9090/transfers/${user.username}`, {
+                          headers: { 'Authorization': `Bearer ${accessToken}` }
+                        });
+                        if (!res.ok) {
+                          const errorData = await res.json().catch(() => ({}));
+                          throw new Error(errorData.error || 'Failed to fetch transaction history');
+                        }
+                        const data = await res.json();
                         setHistoryModal({
                           open: true,
                           username: user.username,
-                          paid: user.paid,
+                          paid: data.paid || [],
+                          received: data.received || [],
                           loading: false,
                           error: ''
                         });
-                      }}
-                    >
-                      <div className="flex items-center justify-between mb-2">
-                        <h3 className="text-xl font-bold text-blue-300">
-                          {user.username}
-                        </h3>
-                        <span className={`text-lg font-bold ${netAmount >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                          {netAmount >= 0 ? '+' : ''}{netAmount.toLocaleString('en-IN')} ₹
-                        </span>
-                      </div>
-                      <div className="flex justify-between text-sm text-gray-400">
-                        <div>
-                          <div className="text-red-400">Sent: -₹{totalSent.toLocaleString('en-IN')}</div>
-                          <div className="text-green-400">Received: +₹{totalReceived.toLocaleString('en-IN')}</div>
-                        </div>
-                      </div>
-                      <div className="mt-3 pt-2 border-t border-gray-700">
-                        <button
-                          className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            // Open transfer modal with this user
-                            setTransferModal({
-                              open: true,
-                              toUsername: user.username,
-                              loading: false,
-                              error: ''
-                            });
-                          }}
-                        >
-                          Send Money
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })
+                      } catch (err) {
+                        setHistoryModal((prev) => ({
+                          ...prev,
+                          loading: false,
+                          error: err.message || 'Failed to fetch transaction history'
+                        }));
+                      }
+                    }}
+                  />
+                ))
             )}
           </div>
         </div>
@@ -216,45 +237,52 @@ export default function MainPage() {
               <>
                 <div className="mb-6">
                   <h3 className="text-md font-semibold text-red-400 mb-2">Sent Money</h3>
-                  {historyModal.paid.length === 0 ? (
-                    <div className="text-gray-400 text-sm">No payments made to this user.</div>
-                  ) : (
-                    <ul className="space-y-2">
-                      {historyModal.paid.map((t, idx) => (
-                        <li key={idx} className="flex flex-col p-3 bg-gray-800 rounded-lg">
-                          <div className="flex justify-between items-center">
-                            <span className="text-red-300 font-medium">To: {t.to_username || 'Unknown'}</span>
-                            <span className="text-red-400 font-bold">-₹{t.amount}</span>
-                          </div>
-                          <div className="flex justify-between text-xs text-gray-400 mt-1">
-                            <span>{t.type}</span>
-                            <span>{new Date(t.created_at).toLocaleString()}</span>
-                          </div>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
+                  
                 </div>
-                <div className="mt-6">
-                  <h3 className="text-md font-semibold text-green-400 mb-2">Received Money</h3>
-                  {historyModal.received.length === 0 ? (
-                    <div className="text-gray-400 text-sm">No payments received from this user.</div>
-                  ) : (
-                    <ul className="space-y-2">
-                      {historyModal.received.map((t, idx) => (
-                        <li key={idx} className="flex flex-col p-3 bg-gray-800 rounded-lg">
-                          <div className="flex justify-between items-center">
-                            <span className="text-green-300 font-medium">From: {t.from_username || 'Unknown'}</span>
+                <div className="flex justify-between items-center mt-6 mb-2">
+                  <h2 className="text-lg font-bold">Transaction History</h2>
+                  <button
+                    className="px-4 py-2 text-sm bg-blue-700 hover:bg-blue-800 text-white rounded"
+                    onClick={() => setTransferModal({ open: true, toUsername: historyModal.username, loading: false, error: '' })}
+                  >
+                    Send Money
+                  </button>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Paid Column */}
+                  <div>
+                    <h3 className="text-md font-semibold text-red-400 mb-2">Paid</h3>
+                    {historyModal.paid.length === 0 ? (
+                      <div className="text-gray-400 text-sm">No payments sent to this user.</div>
+                    ) : (
+                      <ul className="space-y-2">
+                        {historyModal.paid.map((t, idx) => (
+                          <li key={idx} className="flex flex-col p-3 bg-gray-800 rounded-lg">
+                            <span className="text-xs text-gray-400 mb-1">{t.type}</span>
+                            <span className="text-red-400 font-bold">-₹{t.amount}</span>
+                            <span className="text-xs text-gray-500">{new Date(t.created_at).toLocaleString()}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                  {/* Received Column */}
+                  <div>
+                    <h3 className="text-md font-semibold text-green-400 mb-2">Received</h3>
+                    {historyModal.received.length === 0 ? (
+                      <div className="text-gray-400 text-sm">No payments received from this user.</div>
+                    ) : (
+                      <ul className="space-y-2">
+                        {historyModal.received.map((t, idx) => (
+                          <li key={idx} className="flex flex-col p-3 bg-gray-800 rounded-lg">
+                            <span className="text-xs text-gray-400 mb-1">{t.type}</span>
                             <span className="text-green-400 font-bold">+₹{t.amount}</span>
-                          </div>
-                          <div className="flex justify-between text-xs text-gray-400 mt-1">
-                            <span>{t.type}</span>
-                            <span>{new Date(t.created_at).toLocaleString()}</span>
-                          </div>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
+                            <span className="text-xs text-gray-500">{new Date(t.created_at).toLocaleString()}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
                 </div>
               </>
             )}

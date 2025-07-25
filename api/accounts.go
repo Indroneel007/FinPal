@@ -9,6 +9,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	//"github.com/lib/pq"
 )
 
 type accountRequest struct {
@@ -300,6 +301,7 @@ func (s *Server) getTransferBetweenUser(c *gin.Context) {
 			c.JSON(http.StatusUnprocessableEntity, NewValidationError(apiErr))
 			return
 		}
+		fmt.Println("Error in getTransferBetweenUser (Paid):", err)
 		c.JSON(http.StatusInternalServerError, NewError(err))
 		return
 	}
@@ -320,27 +322,29 @@ func (s *Server) getTransferBetweenUser(c *gin.Context) {
 	}
 
 	Paid, err := s.store.ListTransfersBetweenAccounts(c, db.ListTransfersBetweenAccountsParams{
-		FromAccountID: myAccounts,
-		ToAccountID:   otherAccounts,
+		Column1: myAccounts,
+		Column2: otherAccounts,
 	})
 	if err != nil {
 		if apiErr := convertToApiErr(err); apiErr != nil {
 			c.JSON(http.StatusUnprocessableEntity, NewValidationError(apiErr))
 			return
 		}
+		fmt.Println("Error in getTransferBetweenUser (Paid):", err)
 		c.JSON(http.StatusInternalServerError, NewError(err))
 		return
 	}
 
 	Received, err := s.store.ListTransfersBetweenAccounts(c, db.ListTransfersBetweenAccountsParams{
-		FromAccountID: otherAccounts,
-		ToAccountID:   myAccounts,
+		Column1: otherAccounts,
+		Column2: myAccounts,
 	})
 	if err != nil {
 		if apiErr := convertToApiErr(err); apiErr != nil {
 			c.JSON(http.StatusUnprocessableEntity, NewValidationError(apiErr))
 			return
 		}
+		fmt.Println("Error in getTransferBetweenUser (Received):", err)
 		c.JSON(http.StatusInternalServerError, NewError(err))
 		return
 	}
