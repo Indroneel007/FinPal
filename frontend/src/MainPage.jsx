@@ -5,6 +5,8 @@ import UserTransferModal from './UserTransferModal';
 import { MOCK_USERS } from './mockUsers';
 import AddUserTransferModal from './AddUserTransferModal';
 import Navbar from './Navbar';
+import CreateGroupModal from './CreateGroupModal';
+import GroupCard from './GroupCard';
 
 
 export default function MainPage() {
@@ -23,6 +25,10 @@ export default function MainPage() {
   const [userResults, setUserResults] = useState([]);
   const [transferModal, setTransferModal] = useState({ open: false, toUsername: '', loading: false, error: '' });
   const pageSize = 5;
+
+  // Group modal and state
+  const [groupModalOpen, setGroupModalOpen] = useState(false);
+  const [groups, setGroups] = useState([]);
 
   // User search effect
   useEffect(() => {
@@ -134,13 +140,28 @@ export default function MainPage() {
       )}
       <Navbar username={username} showLogin={false} />
       <div className="flex flex-col gap-4 mt-6 mb-6 w-full">
-        <button
-          className="self-end px-5 py-2.5 rounded-lg bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold shadow hover:from-blue-600 hover:to-purple-700 transition-colors"
-          onClick={() => setTransferModal({ open: true, toUsername: '', loading: false, error: '' })}
-        >
-          + Add User
-        </button>
+        <div className="flex gap-4 justify-end">
+          <button
+            className="px-5 py-2.5 rounded-lg bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold shadow hover:from-blue-600 hover:to-purple-700 transition-colors"
+            onClick={() => setTransferModal({ open: true, toUsername: '', loading: false, error: '' })}
+          >
+            + Add User
+          </button>
+          <button
+            className="px-5 py-2.5 rounded-lg bg-gradient-to-r from-green-500 to-teal-600 text-white font-semibold shadow hover:from-green-600 hover:to-teal-700 transition-colors"
+            onClick={() => setGroupModalOpen(true)}
+          >
+            + Create Group
+          </button>
+        </div>
       </div>
+      <CreateGroupModal
+        open={groupModalOpen}
+        onClose={() => setGroupModalOpen(false)}
+        accessToken={accessToken}
+        username={username}
+        onCreated={group => setGroups(prev => [group, ...prev])}
+      />
         
       {loading ? (
         <div className="text-white text-center">Loading accounts...</div>
@@ -149,6 +170,14 @@ export default function MainPage() {
       ) : (
         <div className="flex-1">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mx-auto max-w-7xl pt-4">
+            {groups.length > 0 && groups.map((group, idx) => (
+              <GroupCard
+                key={group.group_id ? `group-${group.group_id}` : `group-${group.group_name}-${idx}`}
+                group={group}
+                onSendMoney={() => {/* TODO: Implement group send money modal */}}
+                onAddUser={() => {/* TODO: Implement group add user modal */}}
+              />
+            ))}
             {Object.keys(userTransactions).length === 0 ? (
               <div className="col-span-full text-white text-center">No transactions found. Send or receive money to see transaction history.</div>
             ) : (

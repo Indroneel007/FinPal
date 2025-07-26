@@ -1,7 +1,7 @@
 import { useState } from 'react';
 
-const SUPPORTED_CURRENCIES = ['INR', 'USD', 'EUR']; // Adjust as per backend util.IsSupportedCurrency
-const SUPPORTED_TYPES = ['savings', 'checking', 'cash', 'credit']; // Adjust as per backend util.IsSupportedType
+const SUPPORTED_CURRENCIES = ['USD', 'Euros', 'Rupees']; // Adjust as per backend util.IsSupportedCurrency
+const SUPPORTED_TYPES = ['rent', 'food', 'travel', 'savings', 'bills','medical','shopping','misc']; // Adjust as per backend util.IsSupportedType
 
 export default function UserTransferModal({ open, onClose, toUsername, onSubmit, loading, error }) {
   const [amount, setAmount] = useState('');
