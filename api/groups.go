@@ -162,35 +162,6 @@ func (s *Server) addMemberToGroup(c *gin.Context) {
 		return
 	}
 
-	payloadData, exists := c.Get(authorizationPayloadKey)
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Authorization payload not found"})
-		return
-	}
-	payload, ok := payloadData.(*util.Payload)
-	if !ok {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid authorization payload"})
-		return
-	}
-
-	arg, err := s.store.GetAccountByGroupIDAndOwner(c, db.GetAccountByGroupIDAndOwnerParams{
-		GroupID: sql.NullInt64{Int64: ID, Valid: true},
-		Owner:   payload.Username,
-	})
-	if err != nil {
-		if apiErr := convertToApiErr(err); apiErr != nil {
-			c.JSON(http.StatusUnprocessableEntity, NewValidationError(apiErr))
-			return
-		}
-		c.JSON(http.StatusInternalServerError, NewError(err))
-		return
-	}
-
-	if arg.Owner != payload.Username {
-		c.JSON(http.StatusForbidden, gin.H{"error": "You do not have permission to add members to this group"})
-		return
-	}
-
 	newAccount, err := s.store.CreateAccountWithGroup(c, db.CreateAccountWithGroupParams{
 		Owner:    req.Username,
 		Balance:  0,

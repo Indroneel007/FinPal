@@ -8,7 +8,8 @@ import Navbar from './Navbar';
 import CreateGroupModal from './CreateGroupModal';
 import GroupCard from './GroupCard';
 import TransactionTypeSelector from './TransactionTypeSelector';
-
+import AddMemberToGroupModal from './AddMemberToGroupModal';
+import UpdateGroupNameModal from './UpdateGroupNameModal';
 
 export default function MainPage() {
   const location = useLocation();
@@ -31,6 +32,10 @@ export default function MainPage() {
   const [groupModalOpen, setGroupModalOpen] = useState(false);
   const [groups, setGroups] = useState([]);
 
+  // Modal state for Add Member
+  const [addMemberModal, setAddMemberModal] = useState({ open: false, group: null, loading: false, error: '' });
+  // Modal state to update groupname
+  const [newGroupNameModal, setNewGroupNameModal] = useState({open: false, group: null, loading: false, error:''});
   // Right-side selector state
   const [transactionType, setTransactionType] = useState('user');
 
@@ -193,7 +198,78 @@ export default function MainPage() {
         username={username}
         onCreated={group => setGroups(prev => [group, ...prev])}
       />
-        
+      <AddMemberToGroupModal
+        open={addMemberModal.open}
+        group={addMemberModal.group || {}}
+        loading={addMemberModal.loading}
+        error={addMemberModal.error}
+        onClose={() => setAddMemberModal({ open: false, group: null, loading: false, error: '' })}
+        onSubmit={async ({ username, currency, type }) => {
+          setAddMemberModal(m => ({ ...m, loading: true, error: '' }));
+          try {
+            const groupId = (addMemberModal.group.group_id || addMemberModal.group.id);
+            const res = await fetch(`http://localhost:9090/groups/${groupId}/add`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${accessToken}`,
+              },
+              body: JSON.stringify({ username, currency, type })
+            });
+            if (!res.ok) {
+              const errData = await res.json().catch(() => ({}));
+              throw new Error(errData.error || 'Failed to add member');
+            }
+            setAddMemberModal({ open: false, group: null, loading: false, error: '' });
+            // Refresh groups list
+            if (transactionType === 'group') {
+              const res = await fetch(`http://localhost:9090/groups?page_id=1&page_size=5`, {
+                headers: { 'Authorization': `Bearer ${accessToken}` },
+              });
+              const data = await res.json();
+              setGroups(Array.isArray(data) ? data : []);
+            }
+          } catch (err) {
+            setAddMemberModal(m => ({ ...m, loading: false, error: err.message }));
+          }
+        }}
+      />
+
+      <UpdateGroupNameModal
+        open={newGroupNameModal.open}
+        group={newGroupNameModal.group || {}}
+        loading={newGroupNameModal.loading}
+        error={newGroupNameModal.error}
+        onClose={() => setNewGroupNameModal({ open: false, group: null, loading: false, error: '' })}
+        onSubmit={async ({ new_name }) => {
+          setNewGroupNameModal(m => ({ ...m, loading: true, error: '' }));
+          try {
+            const res = await fetch(`http://localhost:9090/groups/${newGroupNameModal.group.group_id}/updatename`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${accessToken}`,
+              },
+              body: JSON.stringify({ new_name })
+            })
+            if (!res.ok) {
+              const errData = await res.json().catch(() => ({}));
+              throw new Error(errData.error || 'Failed to update group name');
+            }
+            setNewGroupNameModal({open: false, group: null, loading: false, error: ''})
+            if(transactionType === 'group'){
+              const res = await fetch(`http://localhost:9090/groups?page_id=1&page_size=5`, {
+                headers: { 'Authorization': `Bearer ${accessToken}` },
+              });
+              const data = await res.json();
+              setGroups(Array.isArray(data) ? data : []);
+            }
+          }catch(err){
+            setNewGroupNameModal(m => ({ ...m, loading: false, error: err.message }));
+          }
+        }}
+      />
+
       {loading ? (
         <div className="text-white text-center">Loading accounts...</div>
       ) : error ? (
@@ -210,8 +286,18 @@ export default function MainPage() {
                   <GroupCard
                     key={group.group_id ? `group-${group.group_id}` : `group-${group.group_name}-${idx}`}
                     group={group}
-                    onSendMoney={() => {/* TODO: Implement group send money modal */}}
-                    onAddUser={() => {/* TODO: Implement group add user modal */}}
+                    accessToken={accessToken}
+                    onAction={async (action, groupObj) => {
+                      if (action === 'add-member') {
+                        setAddMemberModal({ open: true, group: groupObj, loading: false, error: '' });
+                      } else if (action === 'update-name') {
+                        setNewGroupNameModal({ open: true, group: groupObj, loading: false, error: '' });
+                      } else if (action === 'leave') {
+                        // Confirm, then POST to /groups/:id/leave
+                      } else if (action === 'delete') {
+                        // Confirm, then POST to /groups/:id/delete
+                      }
+                    }}
                   />
                 ))
               )
