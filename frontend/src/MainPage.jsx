@@ -7,6 +7,7 @@ import AddUserTransferModal from './AddUserTransferModal';
 import Navbar from './Navbar';
 import CreateGroupModal from './CreateGroupModal';
 import GroupCard from './GroupCard';
+import TransactionTypeSelector from './TransactionTypeSelector';
 
 
 export default function MainPage() {
@@ -29,6 +30,9 @@ export default function MainPage() {
   // Group modal and state
   const [groupModalOpen, setGroupModalOpen] = useState(false);
   const [groups, setGroups] = useState([]);
+
+  // Right-side selector state
+  const [transactionType, setTransactionType] = useState('user');
 
   // User search effect
   useEffect(() => {
@@ -83,8 +87,32 @@ export default function MainPage() {
 
   // Fetch all users with transactions
   useEffect(() => {
-    fetchUserTransactions();
-  }, [fetchUserTransactions, page]);
+    if (transactionType === 'user') {
+      fetchUserTransactions();
+    } else if (transactionType === 'group') {
+      // Fetch groups from backend
+      const fetchGroups = async () => {
+        setLoading(true);
+        setError('');
+        try {
+          const res = await fetch(`http://localhost:9090/groups?page_id=1&page_size=5`, {
+            headers: { 'Authorization': `Bearer ${accessToken}` },
+          });
+          if (!res.ok) {
+            const errorData = await res.json().catch(() => ({}));
+            throw new Error(errorData.error || 'Failed to fetch groups');
+          }
+          const data = await res.json();
+          setGroups(Array.isArray(data) ? data : []);
+        } catch (err) {
+          setError(err.message);
+        } finally {
+          setLoading(false);
+        }
+      };
+      fetchGroups();
+    }
+  }, [fetchUserTransactions, page, transactionType, accessToken]);
 
   if (!accessToken || !username) {
     return (
@@ -139,8 +167,8 @@ export default function MainPage() {
         />
       )}
       <Navbar username={username} showLogin={false} />
-      <div className="flex flex-col gap-4 mt-6 mb-6 w-full">
-        <div className="flex gap-4 justify-end">
+      <div className="flex flex-row gap-4 mt-6 mb-6 w-full">
+        <div className="flex-1 flex gap-4 justify-end">
           <button
             className="px-5 py-2.5 rounded-lg bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold shadow hover:from-blue-600 hover:to-purple-700 transition-colors"
             onClick={() => setTransferModal({ open: true, toUsername: '', loading: false, error: '' })}
@@ -153,6 +181,9 @@ export default function MainPage() {
           >
             + Create Group
           </button>
+        </div>
+        <div className="flex items-center">
+          <TransactionTypeSelector value={transactionType} onChange={setTransactionType} />
         </div>
       </div>
       <CreateGroupModal
@@ -170,60 +201,68 @@ export default function MainPage() {
       ) : (
         <div className="flex-1">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mx-auto max-w-7xl pt-4">
-            {groups.length > 0 && groups.map((group, idx) => (
-              <GroupCard
-                key={group.group_id ? `group-${group.group_id}` : `group-${group.group_name}-${idx}`}
-                group={group}
-                onSendMoney={() => {/* TODO: Implement group send money modal */}}
-                onAddUser={() => {/* TODO: Implement group add user modal */}}
-              />
-            ))}
-            {Object.keys(userTransactions).length === 0 ? (
-              <div className="col-span-full text-white text-center">No transactions found. Send or receive money to see transaction history.</div>
+            {/* Conditional grid rendering based on transactionType */}
+            {transactionType === 'group' ? (
+              groups.length === 0 ? (
+                <div className="col-span-full text-white text-center">No groups found. Create a group to get started.</div>
+              ) : (
+                groups.map((group, idx) => (
+                  <GroupCard
+                    key={group.group_id ? `group-${group.group_id}` : `group-${group.group_name}-${idx}`}
+                    group={group}
+                    onSendMoney={() => {/* TODO: Implement group send money modal */}}
+                    onAddUser={() => {/* TODO: Implement group add user modal */}}
+                  />
+                ))
+              )
             ) : (
-              Object.values(userTransactions)
-                .filter((user) => user.username !== username)
-                .map((user) => (
-                  <UserTotalsCard
-                    key={user.username}
-                    username={user.username}
-                    accessToken={accessToken}
-                    onClick={async () => {
-                      setHistoryModal({
-                        open: true,
-                        username: user.username,
-                        paid: [],
-                        received: [],
-                        loading: true,
-                        error: ''
-                      });
-                      try {
-                        const res = await fetch(`http://localhost:9090/transfers/${user.username}`, {
-                          headers: { 'Authorization': `Bearer ${accessToken}` }
-                        });
-                        if (!res.ok) {
-                          const errorData = await res.json().catch(() => ({}));
-                          throw new Error(errorData.error || 'Failed to fetch transaction history');
-                        }
-                        const data = await res.json();
+              Object.keys(userTransactions).length === 0 ? (
+                <div className="col-span-full text-white text-center">No transactions found. Send or receive money to see transaction history.</div>
+              ) : (
+                Object.values(userTransactions)
+                  .filter((user) => user.username !== username)
+                  .map((user) => (
+                    <UserTotalsCard
+                      key={user.username}
+                      username={user.username}
+                      accessToken={accessToken}
+                      onClick={async () => {
                         setHistoryModal({
                           open: true,
                           username: user.username,
-                          paid: data.paid || [],
-                          received: data.received || [],
-                          loading: false,
+                          paid: [],
+                          received: [],
+                          loading: true,
                           error: ''
                         });
-                      } catch (err) {
-                        setHistoryModal((prev) => ({
-                          ...prev,
-                          loading: false,
-                          error: err.message || 'Failed to fetch transaction history'
-                        }));
-                      }
-                    }}
-                  />
-                ))
+                        try {
+                          const res = await fetch(`http://localhost:9090/transfers/${user.username}`, {
+                            headers: { 'Authorization': `Bearer ${accessToken}` }
+                          });
+                          if (!res.ok) {
+                            const errorData = await res.json().catch(() => ({}));
+                            throw new Error(errorData.error || 'Failed to fetch transaction history');
+                          }
+                          const data = await res.json();
+                          setHistoryModal({
+                            open: true,
+                            username: user.username,
+                            paid: data.paid || [],
+                            received: data.received || [],
+                            loading: false,
+                            error: ''
+                          });
+                        } catch (err) {
+                          setHistoryModal((prev) => ({
+                            ...prev,
+                            loading: false,
+                            error: err.message || 'Failed to fetch transaction history'
+                          }));
+                        }
+                      }}
+                    />
+                  ))
+              )
             )}
           </div>
         </div>
