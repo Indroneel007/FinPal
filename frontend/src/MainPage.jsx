@@ -244,7 +244,12 @@ export default function MainPage() {
         onSubmit={async ({ new_name }) => {
           setNewGroupNameModal(m => ({ ...m, loading: true, error: '' }));
           try {
-            const res = await fetch(`http://localhost:9090/groups/${newGroupNameModal.group.group_id}/updatename`, {
+            const groupId = newGroupNameModal.group.group_id || newGroupNameModal.group.id;
+            if(!groupId){
+              setNewGroupNameModal(m => ({ ...m, loading: false, error: "Group ID is missing." }));
+              return;
+            }
+            const res = await fetch(`http://localhost:9090/groups/${groupId}/updatename`, {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',

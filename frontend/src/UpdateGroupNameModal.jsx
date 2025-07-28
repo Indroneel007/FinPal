@@ -21,11 +21,11 @@ export default function UpdateGroupNameModal({ open, onClose, onSubmit, loading,
         <label className="flex flex-col gap-1">
           <input
             type="text"
-            value={new_name}
+            value={groupname}
             onChange={e => setGroupname(e.target.value)}
             required
             className="bg-gray-800 border border-gray-700 rounded px-3 py-2 text-white focus:outline-none focus:border-blue-400"
-            placeholder="Enter username"
+            placeholder="Enter group name"
           />
         </label>
         {error && <div className="text-red-400 text-sm">{error}</div>}

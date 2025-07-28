@@ -149,6 +149,10 @@ func (s *Server) getGroup(c *gin.Context) {
 	c.JSON(http.StatusOK, account)
 }
 
+type GroupIDUri struct {
+	ID int64 `uri:"id" binding:"required"`
+}
+
 func (s *Server) addMemberToGroup(c *gin.Context) {
 	var req AddMemberToGroupRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -156,11 +160,13 @@ func (s *Server) addMemberToGroup(c *gin.Context) {
 		return
 	}
 
-	var ID int64
-	if err := c.ShouldBindUri((&ID)); err != nil {
+	var uri GroupIDUri
+	if err := c.ShouldBindUri((&uri)); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+
+	ID := uri.ID
 
 	newAccount, err := s.store.CreateAccountWithGroup(c, db.CreateAccountWithGroupParams{
 		Owner:    req.Username,
@@ -242,13 +248,19 @@ func (s *Server) getGroupMembers(c *gin.Context) {
 	c.JSON(http.StatusOK, members)
 }
 
+type UpdateNameGroupIDUri struct {
+	ID int64 `uri:"id" binding:"required"`
+}
+
 func (s *Server) updateGroupName(c *gin.Context) {
 	var req UpdateGroupNameRequest
-	var ID int64
-	if err := c.ShouldBindUri(&ID); err != nil {
+	var uri UpdateNameGroupIDUri
+	if err := c.ShouldBindUri(&uri); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+
+	ID := uri.ID
 
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
