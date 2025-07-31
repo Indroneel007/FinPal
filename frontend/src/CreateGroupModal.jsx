@@ -2,7 +2,7 @@ import { useState } from 'react';
 
 export default function CreateGroupModal({ open, onClose, onCreated, accessToken, username }) {
   const [groupName, setGroupName] = useState('');
-  const [currency, setCurrency] = useState('INR');
+  const [currency, setCurrency] = useState('USD');
   const [type, setType] = useState('savings');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -21,7 +21,6 @@ export default function CreateGroupModal({ open, onClose, onCreated, accessToken
           'Authorization': `Bearer ${accessToken}`,
         },
         body: JSON.stringify({
-          username,
           group_name: groupName,
           currency,
           type,

@@ -307,12 +307,18 @@ func (s *Server) updateGroupName(c *gin.Context) {
 	c.JSON(http.StatusOK, group)
 }
 
+type LeaveGroupIDUri struct {
+	ID int64 `uri:"id" binding:"required"`
+}
+
 func (s *Server) leaveGroup(c *gin.Context) {
-	var ID int64
-	if err := c.ShouldBindUri(&ID); err != nil {
+	var uri LeaveGroupIDUri
+	if err := c.ShouldBindUri(&uri); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+
+	ID := uri.ID
 
 	payloadData, exists := c.Get(authorizationPayloadKey)
 	if !exists {
@@ -351,12 +357,18 @@ func (s *Server) leaveGroup(c *gin.Context) {
 	c.JSON(http.StatusOK, updatedAccount)
 }
 
+type DeleteGroupIDUri struct {
+	ID int64 `uri:"id" binding:"required"`
+}
+
 func (s *Server) deleteGroup(c *gin.Context) {
-	var ID int64
-	if err := c.ShouldBindUri(&ID); err != nil {
+	var uri DeleteGroupIDUri
+	if err := c.ShouldBindUri(&uri); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+
+	ID := uri.ID
 
 	payloadData, exists := c.Get(authorizationPayloadKey)
 	if !exists {
