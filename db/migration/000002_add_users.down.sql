@@ -3,7 +3,7 @@ DO $$
 BEGIN
   IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'accounts') THEN
     ALTER TABLE "accounts" DROP CONSTRAINT IF EXISTS "accounts_owner_fkey";
-    DROP INDEX IF EXISTS "accounts_owner_currency_type_idx";
+    DROP INDEX IF EXISTS "accounts_owner_currency_type_group_idx";
   END IF;
 
   IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'locations') THEN

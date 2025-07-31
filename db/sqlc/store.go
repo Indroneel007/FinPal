@@ -206,13 +206,14 @@ func (store *Store) CreateGroupTx(ctx context.Context, arg CreateGroupTxParams) 
 			return fmt.Errorf("create group error: %w", err)
 		}
 
-		args := GetAccountByOwnerCurrencyTypeParams{
+		args := GetAccountByOwnerCurrencyTypeGroupIDParams{
 			Owner:    arg.Username,
 			Currency: arg.Currency,
 			Type:     arg.Type,
+			GroupID:  sql.NullInt64{Int64: result.Group.ID, Valid: true},
 		}
 
-		ToAccount, err := store.GetAccountByOwnerCurrencyType(ctx, args)
+		ToAccount, err := store.GetAccountByOwnerCurrencyTypeGroupID(ctx, args)
 		if err == sql.ErrNoRows {
 			// Only create if not found
 			ToAccount, err = store.CreateAccountWithGroup(ctx, CreateAccountWithGroupParams{

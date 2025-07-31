@@ -10,6 +10,7 @@ import GroupCard from './GroupCard';
 import TransactionTypeSelector from './TransactionTypeSelector';
 import AddMemberToGroupModal from './AddMemberToGroupModal';
 import UpdateGroupNameModal from './UpdateGroupNameModal';
+import LeaveGroupConfirmModal from './LeaveGroupConfirmModal';
 
 export default function MainPage() {
   const location = useLocation();
@@ -36,6 +37,8 @@ export default function MainPage() {
   const [addMemberModal, setAddMemberModal] = useState({ open: false, group: null, loading: false, error: '' });
   // Modal state to update groupname
   const [newGroupNameModal, setNewGroupNameModal] = useState({open: false, group: null, loading: false, error:''});
+  // Modal state for leave group
+  const [leaveGroupModal, setLeaveGroupModal] = useState({ open: false, group: null, loading: false, error: '' });
   // Right-side selector state
   const [transactionType, setTransactionType] = useState('user');
 
@@ -196,7 +199,14 @@ export default function MainPage() {
         onClose={() => setGroupModalOpen(false)}
         accessToken={accessToken}
         username={username}
-        onCreated={group => setGroups(prev => [group, ...prev])}
+        onCreated={async () => {
+          // Always fetch the latest groups after creation
+          const res = await fetch(`http://localhost:9090/groups?page_id=1&page_size=5`, {
+            headers: { 'Authorization': `Bearer ${accessToken}` },
+          });
+          const data = await res.json();
+          setGroups(Array.isArray(data) ? data : []);
+        }}
       />
       <AddMemberToGroupModal
         open={addMemberModal.open}
@@ -274,6 +284,44 @@ export default function MainPage() {
           }
         }}
       />
+      <LeaveGroupConfirmModal
+        open={leaveGroupModal.open}
+        group={leaveGroupModal.group || {}}
+        loading={leaveGroupModal.loading}
+        error={leaveGroupModal.error}
+        onClose={() => setLeaveGroupModal({ open: false, group: null, loading: false, error: '' })}
+        onConfirm={async () => {
+          setLeaveGroupModal(m => ({ ...m, loading: true, error: '' }));
+          try {
+            const groupId = leaveGroupModal.group.group_id || leaveGroupModal.group.id;
+            if(!groupId){
+              setLeaveGroupModal(m => ({ ...m, loading: false, error: "Group ID is missing." }));
+              return;
+            }
+            const res = await fetch(`http://localhost:9090/groups/${groupId}/leave`, {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${accessToken}`,
+              },
+            });
+            if (!res.ok) {
+              const errData = await res.json().catch(() => ({}));
+              throw new Error(errData.error || 'Failed to leave group');
+            }
+            setLeaveGroupModal({ open: false, group: null, loading: false, error: '' });
+            // Refresh groups list
+            if (transactionType === 'group') {
+              const res = await fetch(`http://localhost:9090/groups?page_id=1&page_size=5`, {
+                headers: { 'Authorization': `Bearer ${accessToken}` },
+              });
+              const data = await res.json();
+              setGroups(Array.isArray(data) ? data : []);
+            }
+          } catch (err) {
+            setLeaveGroupModal(m => ({ ...m, loading: false, error: err.message }));
+          }
+        }}
+      />
 
       {loading ? (
         <div className="text-white text-center">Loading accounts...</div>
@@ -298,7 +346,7 @@ export default function MainPage() {
                       } else if (action === 'update-name') {
                         setNewGroupNameModal({ open: true, group: groupObj, loading: false, error: '' });
                       } else if (action === 'leave') {
-                        // Confirm, then POST to /groups/:id/leave
+                        setLeaveGroupModal({ open: true, group: groupObj, loading: false, error: '' });
                       } else if (action === 'delete') {
                         // Confirm, then POST to /groups/:id/delete
                       }

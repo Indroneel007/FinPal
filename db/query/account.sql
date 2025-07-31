@@ -78,6 +78,10 @@ GROUP BY
 SELECT * FROM accounts
 WHERE owner = $1 AND currency = $2 AND type = $3 LIMIT 1;
 
+-- name: GetAccountByOwnerCurrencyTypeGroupID :one
+SELECT * FROM accounts
+WHERE owner = $1 AND currency = $2 AND type = $3 AND group_id = $4 LIMIT 1;
+
 -- name: ListTransactedUsersWithTotals :many
 SELECT
     other_user::text AS username,

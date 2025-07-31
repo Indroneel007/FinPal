@@ -168,15 +168,32 @@ func (s *Server) addMemberToGroup(c *gin.Context) {
 
 	ID := uri.ID
 
-	newAccount, err := s.store.CreateAccountWithGroup(c, db.CreateAccountWithGroupParams{
+	args := db.GetAccountByOwnerCurrencyTypeGroupIDParams{
 		Owner:    req.Username,
-		Balance:  0,
 		Currency: req.Currency,
 		Type:     req.Type,
 		GroupID:  sql.NullInt64{Int64: ID, Valid: true},
-	})
+	}
 
-	if err != nil {
+	newAccount, err := s.store.GetAccountByOwnerCurrencyTypeGroupID(c, args)
+	if err == sql.ErrNoRows {
+		newAccount, err := s.store.CreateAccountWithGroup(c, db.CreateAccountWithGroupParams{
+			Owner:    req.Username,
+			Currency: req.Currency,
+			Type:     req.Type,
+			GroupID:  sql.NullInt64{Int64: ID, Valid: true},
+		})
+		if err != nil {
+			if apiErr := convertToApiErr(err); apiErr != nil {
+				c.JSON(http.StatusUnprocessableEntity, NewValidationError(apiErr))
+				return
+			}
+			c.JSON(http.StatusInternalServerError, NewError(err))
+			return
+		}
+		c.JSON(http.StatusOK, newAccount)
+		return
+	} else if err != nil {
 		if apiErr := convertToApiErr(err); apiErr != nil {
 			c.JSON(http.StatusUnprocessableEntity, NewValidationError(apiErr))
 			return
@@ -184,6 +201,14 @@ func (s *Server) addMemberToGroup(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, NewError(err))
 		return
 	}
+
+	/*newAccount, err := s.store.CreateAccountWithGroup(c, db.CreateAccountWithGroupParams{
+		Owner:    req.Username,
+		Balance:  0,
+		Currency: req.Currency,
+		Type:     req.Type,
+		GroupID:  sql.NullInt64{Int64: ID, Valid: true},
+	})*/
 
 	c.JSON(http.StatusOK, newAccount)
 }
@@ -307,12 +332,18 @@ func (s *Server) updateGroupName(c *gin.Context) {
 	c.JSON(http.StatusOK, group)
 }
 
+type LeaveGroupIDUri struct {
+	ID int64 `uri:"id" binding:"required"`
+}
+
 func (s *Server) leaveGroup(c *gin.Context) {
-	var ID int64
-	if err := c.ShouldBindUri(&ID); err != nil {
+	var uri LeaveGroupIDUri
+	if err := c.ShouldBindUri(&uri); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+
+	ID := uri.ID
 
 	payloadData, exists := c.Get(authorizationPayloadKey)
 	if !exists {
@@ -351,12 +382,18 @@ func (s *Server) leaveGroup(c *gin.Context) {
 	c.JSON(http.StatusOK, updatedAccount)
 }
 
+type DeleteGroupIDUri struct {
+	ID int64 `uri:"id" binding:"required"`
+}
+
 func (s *Server) deleteGroup(c *gin.Context) {
-	var ID int64
-	if err := c.ShouldBindUri(&ID); err != nil {
+	var uri DeleteGroupIDUri
+	if err := c.ShouldBindUri(&uri); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+
+	ID := uri.ID
 
 	payloadData, exists := c.Get(authorizationPayloadKey)
 	if !exists {
