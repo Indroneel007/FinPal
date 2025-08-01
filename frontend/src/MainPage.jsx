@@ -11,6 +11,8 @@ import TransactionTypeSelector from './TransactionTypeSelector';
 import AddMemberToGroupModal from './AddMemberToGroupModal';
 import UpdateGroupNameModal from './UpdateGroupNameModal';
 import LeaveGroupConfirmModal from './LeaveGroupConfirmModal';
+import GroupHistoryModal from './GroupHistoryModal';
+import GroupSendMoneyModal from './GroupSendMoneyModal';
 
 export default function MainPage() {
   const location = useLocation();
@@ -41,6 +43,10 @@ export default function MainPage() {
   const [leaveGroupModal, setLeaveGroupModal] = useState({ open: false, group: null, loading: false, error: '' });
   // Right-side selector state
   const [transactionType, setTransactionType] = useState('user');
+  // Group History state
+  const [groupHistoryModal, setGroupHistoryModal] = useState({ open: false, group: null, history: [], loading: false, error: '' });
+  // Group Send Money state
+  const [groupSendMoneyModal, setGroupSendMoneyModal] = useState({ open: false, group: null, members: [], loading: false, error: '' });
 
   // User search effect
   useEffect(() => {
@@ -125,7 +131,7 @@ export default function MainPage() {
   if (!accessToken || !username) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#18181b] text-white">
-        <div className="bg-gray-900 p-8 rounded-2xl shadow-lg max-w-md border border-gray-700 text-center">
+        <div className="bg-gray-900 p-8 rounded-2xl shadow-lg max-w-md w-full border border-gray-700 text-center">
           <h2 className="text-2xl font-bold mb-4">Invalid Access</h2>
           <p className="mb-4">Please login again to access your accounts.</p>
           <button
@@ -322,6 +328,47 @@ export default function MainPage() {
           }
         }}
       />
+      <GroupHistoryModal
+        open={groupHistoryModal.open}
+        group={groupHistoryModal.group || {}}
+        history={groupHistoryModal.history}
+        loading={groupHistoryModal.loading}
+        error={groupHistoryModal.error}
+        onClose={() => setGroupHistoryModal({ open: false, group: null, history: [], loading: false, error: '' })}
+      />
+      <GroupSendMoneyModal
+        open={groupSendMoneyModal.open}
+        group={groupSendMoneyModal.group || {}}
+        members={groupSendMoneyModal.members}
+        loading={groupSendMoneyModal.loading}
+        error={groupSendMoneyModal.error}
+        onClose={() => setGroupSendMoneyModal({ open: false, group: null, members: [], loading: false, error: '' })}
+        onSubmit={async ({ to_username, amount }) => {
+          const groupId = groupSendMoneyModal.group.group_id || groupSendMoneyModal.group.id;
+          try {
+            const res = await fetch(`http://localhost:9090/groups/${groupId}/transaction`, {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${accessToken}`,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                to_username,
+                amount: Number(amount),
+                currency: groupSendMoneyModal.group.currency,
+                type: groupSendMoneyModal.group.type,
+              }),
+            });
+            if (!res.ok) {
+              const errorData = await res.json().catch(() => ({}));
+              throw new Error(errorData.error || 'Failed to send money');
+            }
+            // Optionally refresh group history or UI here
+          } catch (err) {
+            throw err;
+          }
+        }}
+      />
 
       {loading ? (
         <div className="text-white text-center">Loading accounts...</div>
@@ -341,6 +388,41 @@ export default function MainPage() {
                     group={group}
                     accessToken={accessToken}
                     onAction={async (action, groupObj) => {
+                      if (action === 'view-history') {
+                        setGroupHistoryModal({ open: true, group: groupObj, history: [], loading: true, error: '' });
+                        try {
+                          const res = await fetch(`http://localhost:9090/groups/${groupObj.group_id || groupObj.id}/history`, {
+                            headers: { 'Authorization': `Bearer ${accessToken}` },
+                          });
+                          if (!res.ok) {
+                            const errorData = await res.json().catch(() => ({}));
+                            throw new Error(errorData.error || 'Failed to fetch group history');
+                          }
+                          const data = await res.json();
+                          setGroupHistoryModal({ open: true, group: groupObj, history: data, loading: false, error: '' });
+                        } catch (err) {
+                          setGroupHistoryModal({ open: true, group: groupObj, history: [], loading: false, error: err.message });
+                        }
+                        return;
+                      }
+                      if (action === 'send-money') {
+                        setGroupSendMoneyModal({ open: true, group: groupObj, members: [], loading: true, error: '' });
+                        // Fetch group members
+                        try {
+                          const res = await fetch(`http://localhost:9090/groups/${groupObj.group_id || groupObj.id}/accounts?page_id=1&page_size=5`, {
+                            headers: { 'Authorization': `Bearer ${accessToken}` },
+                          });
+                          if (!res.ok) {
+                            const errorData = await res.json().catch(() => ({}));
+                            throw new Error(errorData.error || 'Failed to fetch group members');
+                          }
+                          const data = await res.json();
+                          setGroupSendMoneyModal({ open: true, group: groupObj, members: data, loading: false, error: '' });
+                        } catch (err) {
+                          setGroupSendMoneyModal({ open: true, group: groupObj, members: [], loading: false, error: err.message });
+                        }
+                        return;
+                      }
                       if (action === 'add-member') {
                         setAddMemberModal({ open: true, group: groupObj, loading: false, error: '' });
                       } else if (action === 'update-name') {

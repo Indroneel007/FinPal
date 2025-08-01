@@ -28,7 +28,9 @@ export default function GroupCard({ group, accessToken, onAction }) {
   ];
 
   return (
-    <div className="bg-gray-800 rounded-xl shadow-lg p-6 flex flex-col gap-3 border border-gray-700 hover:border-blue-500 transition-colors relative">
+    <div className="bg-gray-800 rounded-xl shadow-lg p-6 flex flex-col gap-3 border border-gray-700 hover:border-blue-500 transition-colors relative cursor-pointer"
+      onClick={() => onAction && onAction('view-history', group)}
+    >
       <div className="flex items-center justify-between mb-2">
         <h3 className="text-xl font-bold text-purple-300">{group.group_name}</h3>
         <div className="flex items-center gap-2">
@@ -36,6 +38,13 @@ export default function GroupCard({ group, accessToken, onAction }) {
           <KebabMenu options={options} />
         </div>
       </div>
+      <button
+        type="button"
+        className="mt-2 py-2 px-4 bg-green-600 hover:bg-green-700 text-white rounded-lg font-bold transition-colors self-end"
+        onClick={e => { e.stopPropagation(); onAction && onAction('send-money', group); }}
+      >
+        Send Money
+      </button>
     </div>
   );
 }

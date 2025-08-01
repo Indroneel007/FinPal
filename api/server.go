@@ -112,6 +112,7 @@ func (s *Server) MountHandlers() {
 	auth.POST("/groups/:id/leave", s.leaveGroup)
 	auth.POST("/groups/:id/delete", s.deleteGroup)
 	auth.GET("/groups/:id/history", s.getGroupHistory)
+	auth.POST("/groups/:id/transaction", s.groupTransaction)
 	//Location
 	auth.POST("/location", s.createLocation)
 	//auth.POST("/location/:id", s.updateLocation)

@@ -217,13 +217,19 @@ func (s *Server) addMemberToGroup(c *gin.Context) {
 	c.JSON(http.StatusOK, newAccount)
 }
 
+type GetGroupMembersIDUri struct {
+	ID int64 `uri:"id" binding:"required"`
+}
+
 func (s *Server) getGroupMembers(c *gin.Context) {
 	var req GetGroupMembersRequest
-	var ID int64
-	if err := c.ShouldBindUri(&ID); err != nil {
+	var uri GetGroupMembersIDUri
+	if err := c.ShouldBindUri(&uri); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+
+	ID := uri.ID
 
 	if err := c.ShouldBindQuery(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -454,4 +460,67 @@ func (s *Server) getGroupHistory(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, groupHistory)
+}
+
+type GroupTransferRequest struct {
+	ToUsername string `json:"to_username" binding:"required"`
+	Amount     int64  `json:"amount" binding:"required,min=1"`
+	Currency   string `json:"currency" binding:"required,currency"`
+	Type       string `json:"type" binding:"required,accountType"`
+}
+
+type GroupTransferUri struct {
+	GroupID int64 `uri:"id" binding:"required"`
+}
+
+func (s *Server) groupTransaction(c *gin.Context) {
+	var req GroupTransferRequest
+	var uri GroupTransferUri
+	if err := c.ShouldBindUri(&uri); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	GroupID := uri.GroupID
+
+	payloadData, exists := c.Get(authorizationPayloadKey)
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Authorization payload not found"})
+		return
+	}
+	payload, ok := payloadData.(*util.Payload)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid authorization payload"})
+		return
+	}
+
+	if payload.Username == req.ToUsername {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Cannot send money to yourself"})
+		return
+	}
+
+	groupTransaction, err := s.store.GroupTransactionTx(c, db.GroupTransferTxParams{
+		FromUsername: payload.Username,
+		ToUsername:   req.ToUsername,
+		Currency:     req.Currency,
+		Type:         req.Type,
+		Amount:       req.Amount,
+		GroupID:      GroupID,
+	})
+	if err != nil {
+		if apiErr := convertToApiErr(err); apiErr != nil {
+			c.JSON(http.StatusUnprocessableEntity, NewValidationError(apiErr))
+			return
+		}
+		c.JSON(http.StatusInternalServerError, NewError(err))
+		return
+	}
+
+	c.JSON(http.StatusOK, groupTransaction)
+
 }

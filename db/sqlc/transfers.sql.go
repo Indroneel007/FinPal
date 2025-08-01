@@ -7,25 +7,32 @@ package db
 
 import (
 	"context"
+	"database/sql"
 	"time"
 
 	"github.com/lib/pq"
 )
 
 const createTransfer = `-- name: CreateTransfer :one
-INSERT INTO transfers (from_account_id, to_account_id, amount)
-VALUES ($1, $2, $3)
+INSERT INTO transfers (from_account_id, to_account_id, amount, group_id)
+VALUES ($1, $2, $3, $4)
 RETURNING id, from_account_id, to_account_id, amount, created_at, group_id
 `
 
 type CreateTransferParams struct {
-	FromAccountID int64 `json:"from_account_id"`
-	ToAccountID   int64 `json:"to_account_id"`
-	Amount        int64 `json:"amount"`
+	FromAccountID int64         `json:"from_account_id"`
+	ToAccountID   int64         `json:"to_account_id"`
+	Amount        int64         `json:"amount"`
+	GroupID       sql.NullInt64 `json:"group_id"`
 }
 
 func (q *Queries) CreateTransfer(ctx context.Context, arg CreateTransferParams) (Transfer, error) {
-	row := q.db.QueryRowContext(ctx, createTransfer, arg.FromAccountID, arg.ToAccountID, arg.Amount)
+	row := q.db.QueryRowContext(ctx, createTransfer,
+		arg.FromAccountID,
+		arg.ToAccountID,
+		arg.Amount,
+		arg.GroupID,
+	)
 	var i Transfer
 	err := row.Scan(
 		&i.ID,
