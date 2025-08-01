@@ -8,6 +8,7 @@ package db
 import (
 	"context"
 	"database/sql"
+	"time"
 )
 
 const acceptGroupInvitation = `-- name: AcceptGroupInvitation :one
@@ -141,6 +142,63 @@ func (q *Queries) GetGroupMembers(ctx context.Context, arg GetGroupMembersParams
 			&i.GroupID,
 			&i.HasAccepted,
 			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getGroupTransactionHistory = `-- name: GetGroupTransactionHistory :many
+SELECT
+    t.id AS transfer_id,
+    t.amount,
+    fa.owner AS from_username,
+    ta.owner AS to_username,
+    t.created_at,
+    t.group_id
+FROM
+    transfers t
+    JOIN accounts fa ON t.from_account_id = fa.id
+    JOIN accounts ta ON t.to_account_id = ta.id
+WHERE
+    t.group_id = $1
+ORDER BY
+    t.created_at DESC
+`
+
+type GetGroupTransactionHistoryRow struct {
+	TransferID   int64         `json:"transfer_id"`
+	Amount       int64         `json:"amount"`
+	FromUsername string        `json:"from_username"`
+	ToUsername   string        `json:"to_username"`
+	CreatedAt    time.Time     `json:"created_at"`
+	GroupID      sql.NullInt64 `json:"group_id"`
+}
+
+func (q *Queries) GetGroupTransactionHistory(ctx context.Context, groupID sql.NullInt64) ([]GetGroupTransactionHistoryRow, error) {
+	rows, err := q.db.QueryContext(ctx, getGroupTransactionHistory, groupID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetGroupTransactionHistoryRow
+	for rows.Next() {
+		var i GetGroupTransactionHistoryRow
+		if err := rows.Scan(
+			&i.TransferID,
+			&i.Amount,
+			&i.FromUsername,
+			&i.ToUsername,
+			&i.CreatedAt,
+			&i.GroupID,
 		); err != nil {
 			return nil, err
 		}

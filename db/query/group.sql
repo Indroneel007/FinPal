@@ -48,3 +48,20 @@ RETURNING *;
 -- name: DeleteGroup :exec
 DELETE FROM groups
 WHERE id = $1;
+
+-- name: GetGroupTransactionHistory :many
+SELECT
+    t.id AS transfer_id,
+    t.amount,
+    fa.owner AS from_username,
+    ta.owner AS to_username,
+    t.created_at,
+    t.group_id
+FROM
+    transfers t
+    JOIN accounts fa ON t.from_account_id = fa.id
+    JOIN accounts ta ON t.to_account_id = ta.id
+WHERE
+    t.group_id = $1
+ORDER BY
+    t.created_at DESC;

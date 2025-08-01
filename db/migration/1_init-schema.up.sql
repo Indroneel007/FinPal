@@ -71,3 +71,5 @@ ALTER TABLE "transfers" ADD FOREIGN KEY ("from_account_id") REFERENCES "accounts
 ALTER TABLE "transfers" ADD FOREIGN KEY ("to_account_id") REFERENCES "accounts" ("id");
 
 ALTER TABLE "accounts" ADD FOREIGN KEY ("group_id") REFERENCES "groups" ("id");
+
+ALTER TABLE "transfers" ADD COLUMN "group_id" bigint REFERENCES groups(id);

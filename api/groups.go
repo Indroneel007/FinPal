@@ -39,6 +39,10 @@ type UpdateGroupNameRequest struct {
 	NewName string `json:"new_name" binding:"required"`
 }
 
+type getGroupHistoryRequest struct {
+	ID int64 `uri:"id" binding:"required"`
+}
+
 func (s *Server) createGroup(c *gin.Context) {
 	var req CreateGroupRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -430,4 +434,24 @@ func (s *Server) deleteGroup(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "deleted group successfully"})
+}
+
+func (s *Server) getGroupHistory(c *gin.Context) {
+	var req getGroupHistoryRequest
+	if err := c.ShouldBindUri(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	groupHistory, err := s.store.GetGroupTransactionHistory(c, sql.NullInt64{Int64: req.ID, Valid: true})
+	if err != nil {
+		if apiErr := convertToApiErr(err); apiErr != nil {
+			c.JSON(http.StatusUnprocessableEntity, NewValidationError(apiErr))
+			return
+		}
+		c.JSON(http.StatusInternalServerError, NewError(err))
+		return
+	}
+
+	c.JSON(http.StatusOK, groupHistory)
 }
