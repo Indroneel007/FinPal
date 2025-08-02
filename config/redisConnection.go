@@ -45,7 +45,7 @@ func SetupRedisCache() *RedisCache {
 	REDIS_PORT := viper.GetString("REDIS_PORT")
 
 	if REDIS_HOST == "" {
-		REDIS_HOST = "localhost"
+		REDIS_HOST = "red-d2763u63jp1c73edni1g"
 	}
 
 	if REDIS_PORT == "" {
