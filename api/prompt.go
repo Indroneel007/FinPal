@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 	"examples/SimpleBankProject/prompt"
 	"examples/SimpleBankProject/util"
+	"fmt"
 	"net/http"
 	"os"
-	"fmt"
 
 	//"strings"
 
@@ -27,9 +27,7 @@ type PromptResponse struct {
 func (server *Server) PromptAPI(c *gin.Context) {
 	paths := []string{".env", "../.env", "../../.env"}
 	for _, path := range paths {
-		if err := godotenv.Load(path); err == nil {
-			break
-		}
+		_ = godotenv.Load(path)
 	}
 
 	viper.AutomaticEnv()

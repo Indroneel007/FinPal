@@ -25,11 +25,7 @@ func main() {
 
 	fmt.Println("Hello World!")
 
-	err := godotenv.Load(".env")
-
-	if err != nil {
-		log.Fatal("Error loading .env file:", err)
-	}
+	_ = godotenv.Load(".env")
 
 	viper.AutomaticEnv()
 	dbSource := viper.GetString("DBSOURCE")

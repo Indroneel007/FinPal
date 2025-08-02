@@ -50,9 +50,7 @@ func AddOTPToRedis(otp string, email string, c context.Context) error {
 func SendOTPEmail(otp, recepient string) error {
 	paths := []string{".env", "../.env", "../../.env"}
 	for _, path := range paths {
-		if err := godotenv.Load(path); err == nil {
-			break
-		}
+		_ = godotenv.Load(path)
 	}
 
 	var err error

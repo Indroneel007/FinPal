@@ -23,9 +23,7 @@ func SMTPConnection() {
 
 	paths := []string{".env", "../.env", "../../.env"}
 	for _, path := range paths {
-		if err := godotenv.Load(path); err == nil {
-			break
-		}
+		_ = godotenv.Load(path)
 	}
 
 	viper.AutomaticEnv()

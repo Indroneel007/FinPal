@@ -15,9 +15,7 @@ import (
 func GetCostOfLivingFromAI(ctx context.Context, location string) (ExpenseCategories, error) {
 	paths := []string{".env", "../.env", "../../.env"}
 	for _, path := range paths {
-		if err := godotenv.Load(path); err == nil {
-			break
-		}
+		_ = godotenv.Load(path)
 	}
 
 	viper.AutomaticEnv()

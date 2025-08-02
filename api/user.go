@@ -90,9 +90,7 @@ func UserResponse(user db.User) userResponse {
 func (s *Server) createUser(c *gin.Context) {
 	paths := []string{".env", "../.env", "../../.env"}
 	for _, path := range paths {
-		if err := godotenv.Load(path); err == nil {
-			break
-		}
+		_ = godotenv.Load(path)
 	}
 
 	var err error
