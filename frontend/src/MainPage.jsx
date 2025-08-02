@@ -13,6 +13,7 @@ import UpdateGroupNameModal from './UpdateGroupNameModal';
 import LeaveGroupConfirmModal from './LeaveGroupConfirmModal';
 import GroupHistoryModal from './GroupHistoryModal';
 import GroupSendMoneyModal from './GroupSendMoneyModal';
+import PromptSidebar from './PromptSidebar';
 
 export default function MainPage() {
   const location = useLocation();
@@ -47,6 +48,10 @@ export default function MainPage() {
   const [groupHistoryModal, setGroupHistoryModal] = useState({ open: false, group: null, history: [], loading: false, error: '' });
   // Group Send Money state
   const [groupSendMoneyModal, setGroupSendMoneyModal] = useState({ open: false, group: null, members: [], loading: false, error: '' });
+  // Prompt sidebar state
+  const [promptSidebar, setPromptSidebar] = useState({ open: false, loading: false, prompt: '', error: '' });
+  // Mindset dropdown state
+  const [mindset, setMindset] = useState('medium');
 
   // User search effect
   useEffect(() => {
@@ -369,6 +374,59 @@ export default function MainPage() {
           }
         }}
       />
+      <PromptSidebar
+        open={promptSidebar.open}
+        prompt={promptSidebar.prompt}
+        loading={promptSidebar.loading}
+        error={promptSidebar.error}
+        mindset={mindset}
+        setMindset={setMindset}
+        onMindsetChange={async (newMindset) => {
+          setPromptSidebar(ps => ({ ...ps, loading: true, error: '', prompt: '' }));
+          try {
+            const res = await fetch('http://localhost:9090/prompt', {
+              method: 'POST',
+              headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+              body: JSON.stringify({ saving_mindset: newMindset })
+            });
+            if (!res.ok) {
+              const errorData = await res.json().catch(() => ({}));
+              throw new Error(errorData.error || 'Failed to get prompt');
+            }
+            const data = await res.json();
+            setPromptSidebar(ps => ({ ...ps, loading: false, prompt: data.sentence || data.prompt || JSON.stringify(data), error: '' }));
+          } catch (err) {
+            setPromptSidebar(ps => ({ ...ps, loading: false, prompt: '', error: err.message }));
+          }
+        }}
+        onClose={() => setPromptSidebar({ ...promptSidebar, open: false })}
+      />
+      {/* Floating AI Prompt Button */}
+      <button
+        className="fixed left-4 top-1/2 z-40 bg-gradient-to-br from-purple-600 via-blue-700 to-indigo-800 text-white rounded-full shadow-xl p-4 hover:scale-110 hover:shadow-2xl transition-all duration-200 border-2 border-purple-400"
+        style={{ transform: 'translateY(-50%)' }}
+        onClick={async () => {
+          setPromptSidebar({ open: true, loading: true, prompt: '', error: '' });
+          try {
+            const res = await fetch('http://localhost:9090/prompt', {
+              method: 'POST',
+              headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+              body: JSON.stringify({ saving_mindset: mindset })
+            });
+            if (!res.ok) {
+              const errorData = await res.json().catch(() => ({}));
+              throw new Error(errorData.error || 'Failed to get prompt');
+            }
+            const data = await res.json();
+            setPromptSidebar({ open: true, loading: false, prompt: data.sentence || data.prompt || JSON.stringify(data), error: '' });
+          } catch (err) {
+            setPromptSidebar({ open: true, loading: false, prompt: '', error: err.message });
+          }
+        }}
+        aria-label="Open AI Prompt"
+      >
+        <span className="text-2xl">✨</span>
+      </button>
 
       {loading ? (
         <div className="text-white text-center">Loading accounts...</div>

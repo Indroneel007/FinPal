@@ -5,6 +5,8 @@ import (
 	"examples/SimpleBankProject/prompt"
 	"examples/SimpleBankProject/util"
 	"net/http"
+	"os"
+	"fmt"
 
 	//"strings"
 
@@ -31,7 +33,10 @@ func (server *Server) PromptAPI(c *gin.Context) {
 	}
 
 	viper.AutomaticEnv()
+	cwd, _ := os.Getwd()
+	fmt.Println("[DEBUG] CWD:", cwd)
 	secret := viper.GetString("OPENROUTER_API_KEY")
+	fmt.Println("[DEBUG] OPENROUTER_API_KEY from viper:", secret)
 	if secret == "" {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "GEMINI_API_KEY is not set in the environment variables"})
 		return
