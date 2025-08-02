@@ -8,7 +8,7 @@ export default function UserTotalsCard({ username, accessToken, onCardClick, onS
     async function fetchTotals() {
       setTotals(t => ({ ...t, loading: true, error: '' }));
       try {
-        const res = await fetch(`http://localhost:9090/transfers/${username}`, {
+        const res = await fetch(`https://finpal-1.onrender.com/transfers/${username}`, {
           headers: { 'Authorization': `Bearer ${accessToken}` },
         });
         if (!res.ok) {

@@ -21,7 +21,7 @@ export default function OtpVerify() {
         setError('Missing access token. Please restart the forgot password flow.');
         return;
       }
-      const res = await fetch('http://localhost:9090/checkotp', {
+      const res = await fetch('https://finpal-1.onrender.com/checkotp', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

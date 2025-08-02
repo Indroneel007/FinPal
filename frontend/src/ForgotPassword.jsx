@@ -10,7 +10,7 @@ export default function ForgotPassword() {
     e.preventDefault();
     setSubmitted(false);
     try {
-      const res = await fetch('http://localhost:9090/forgotpassword', {
+      const res = await fetch('https://finpal-1.onrender.com/forgotpassword', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email })

@@ -14,7 +14,7 @@ export default function AuthCard({ mode, onClose, onSwitch, setUsername }) {
     e.preventDefault();
     if (mode === 'login') {
       try {
-        const res = await fetch('http://localhost:9090/login', {
+        const res = await fetch('https://finpal-1.onrender.com/login', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -50,7 +50,7 @@ export default function AuthCard({ mode, onClose, onSwitch, setUsername }) {
         return;
       }
       try {
-        const res = await fetch('http://localhost:9090/register', {
+        const res = await fetch('https://finpal-1.onrender.com/register', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({

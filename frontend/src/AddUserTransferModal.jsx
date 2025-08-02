@@ -40,7 +40,7 @@ export default function AddUserTransferModal({ accessToken, onTransferSuccess, t
     setSuccessMsg('');
     try {
       // Use new public endpoint for recipient lookup
-      const res = await fetch(`http://localhost:9090/users/${toUsername || username}`);
+      const res = await fetch(`https://finpal-1.onrender.com/users/${toUsername || username}`);
       if (!res.ok) {
         setUserCheckError('User not found.');
         setUserCheckLoading(false);
@@ -67,7 +67,7 @@ export default function AddUserTransferModal({ accessToken, onTransferSuccess, t
       return;
     }
     try {
-      const res = await fetch('http://localhost:9090/transfers', {
+      const res = await fetch('https://finpal-1.onrender.com/transfers', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -75,7 +75,7 @@ export default function MainPage() {
     }
     try {
       setLoading(true);
-      const res = await fetch(`http://localhost:9090/transfers/user?page_id=${page}&page_size=${pageSize}`, {
+      const res = await fetch(`https://finpal-1.onrender.com/transfers/user?page_id=${page}&page_size=${pageSize}`, {
         headers: { 'Authorization': `Bearer ${accessToken}` }
       });
       if (!res.ok) {
@@ -114,7 +114,7 @@ export default function MainPage() {
         setLoading(true);
         setError('');
         try {
-          const res = await fetch(`http://localhost:9090/groups?page_id=1&page_size=5`, {
+          const res = await fetch(`https://finpal-1.onrender.com/groups?page_id=1&page_size=5`, {
             headers: { 'Authorization': `Bearer ${accessToken}` },
           });
           if (!res.ok) {
@@ -161,7 +161,7 @@ export default function MainPage() {
             if (historyModal.username) {
               setHistoryModal((prev) => ({ ...prev, loading: true }));
               try {
-                const res = await fetch(`http://localhost:9090/transfers/${historyModal.username}`, {
+                const res = await fetch(`https://finpal-1.onrender.com/transfers/${historyModal.username}`, {
                   headers: { 'Authorization': `Bearer ${accessToken}` }
                 });
                 if (!res.ok) {
@@ -212,7 +212,7 @@ export default function MainPage() {
         username={username}
         onCreated={async () => {
           // Always fetch the latest groups after creation
-          const res = await fetch(`http://localhost:9090/groups?page_id=1&page_size=5`, {
+          const res = await fetch(`https://finpal-1.onrender.com/groups?page_id=1&page_size=5`, {
             headers: { 'Authorization': `Bearer ${accessToken}` },
           });
           const data = await res.json();
@@ -229,7 +229,7 @@ export default function MainPage() {
           setAddMemberModal(m => ({ ...m, loading: true, error: '' }));
           try {
             const groupId = (addMemberModal.group.group_id || addMemberModal.group.id);
-            const res = await fetch(`http://localhost:9090/groups/${groupId}/add`, {
+            const res = await fetch(`https://finpal-1.onrender.com/groups/${groupId}/add`, {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
@@ -244,7 +244,7 @@ export default function MainPage() {
             setAddMemberModal({ open: false, group: null, loading: false, error: '' });
             // Refresh groups list
             if (transactionType === 'group') {
-              const res = await fetch(`http://localhost:9090/groups?page_id=1&page_size=5`, {
+              const res = await fetch(`https://finpal-1.onrender.com/groups?page_id=1&page_size=5`, {
                 headers: { 'Authorization': `Bearer ${accessToken}` },
               });
               const data = await res.json();
@@ -270,7 +270,7 @@ export default function MainPage() {
               setNewGroupNameModal(m => ({ ...m, loading: false, error: "Group ID is missing." }));
               return;
             }
-            const res = await fetch(`http://localhost:9090/groups/${groupId}/updatename`, {
+            const res = await fetch(`https://finpal-1.onrender.com/groups/${groupId}/updatename`, {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
@@ -284,7 +284,7 @@ export default function MainPage() {
             }
             setNewGroupNameModal({open: false, group: null, loading: false, error: ''})
             if(transactionType === 'group'){
-              const res = await fetch(`http://localhost:9090/groups?page_id=1&page_size=5`, {
+              const res = await fetch(`https://finpal-1.onrender.com/groups?page_id=1&page_size=5`, {
                 headers: { 'Authorization': `Bearer ${accessToken}` },
               });
               const data = await res.json();
@@ -309,7 +309,7 @@ export default function MainPage() {
               setLeaveGroupModal(m => ({ ...m, loading: false, error: "Group ID is missing." }));
               return;
             }
-            const res = await fetch(`http://localhost:9090/groups/${groupId}/leave`, {
+            const res = await fetch(`https://finpal-1.onrender.com/groups/${groupId}/leave`, {
               method: 'POST',
               headers: {
                 'Authorization': `Bearer ${accessToken}`,
@@ -322,7 +322,7 @@ export default function MainPage() {
             setLeaveGroupModal({ open: false, group: null, loading: false, error: '' });
             // Refresh groups list
             if (transactionType === 'group') {
-              const res = await fetch(`http://localhost:9090/groups?page_id=1&page_size=5`, {
+              const res = await fetch(`https://finpal-1.onrender.com/groups?page_id=1&page_size=5`, {
                 headers: { 'Authorization': `Bearer ${accessToken}` },
               });
               const data = await res.json();
@@ -351,7 +351,7 @@ export default function MainPage() {
         onSubmit={async ({ to_username, amount }) => {
           const groupId = groupSendMoneyModal.group.group_id || groupSendMoneyModal.group.id;
           try {
-            const res = await fetch(`http://localhost:9090/groups/${groupId}/transaction`, {
+            const res = await fetch(`https://finpal-1.onrender.com/groups/${groupId}/transaction`, {
               method: 'POST',
               headers: {
                 'Authorization': `Bearer ${accessToken}`,
@@ -384,7 +384,7 @@ export default function MainPage() {
         onMindsetChange={async (newMindset) => {
           setPromptSidebar(ps => ({ ...ps, loading: true, error: '', prompt: '' }));
           try {
-            const res = await fetch('http://localhost:9090/prompt', {
+            const res = await fetch('https://finpal-1.onrender.com/prompt', {
               method: 'POST',
               headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
               body: JSON.stringify({ saving_mindset: newMindset })
@@ -408,7 +408,7 @@ export default function MainPage() {
         onClick={async () => {
           setPromptSidebar({ open: true, loading: true, prompt: '', error: '' });
           try {
-            const res = await fetch('http://localhost:9090/prompt', {
+            const res = await fetch('https://finpal-1.onrender.com/prompt', {
               method: 'POST',
               headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
               body: JSON.stringify({ saving_mindset: mindset })
@@ -449,7 +449,7 @@ export default function MainPage() {
                       if (action === 'view-history') {
                         setGroupHistoryModal({ open: true, group: groupObj, history: [], loading: true, error: '' });
                         try {
-                          const res = await fetch(`http://localhost:9090/groups/${groupObj.group_id || groupObj.id}/history`, {
+                          const res = await fetch(`https://finpal-1.onrender.com/groups/${groupObj.group_id || groupObj.id}/history`, {
                             headers: { 'Authorization': `Bearer ${accessToken}` },
                           });
                           if (!res.ok) {
@@ -467,7 +467,7 @@ export default function MainPage() {
                         setGroupSendMoneyModal({ open: true, group: groupObj, members: [], loading: true, error: '' });
                         // Fetch group members
                         try {
-                          const res = await fetch(`http://localhost:9090/groups/${groupObj.group_id || groupObj.id}/accounts?page_id=1&page_size=5`, {
+                          const res = await fetch(`https://finpal-1.onrender.com/groups/${groupObj.group_id || groupObj.id}/accounts?page_id=1&page_size=5`, {
                             headers: { 'Authorization': `Bearer ${accessToken}` },
                           });
                           if (!res.ok) {
@@ -515,7 +515,7 @@ export default function MainPage() {
                           error: ''
                         });
                         try {
-                          const res = await fetch(`http://localhost:9090/transfers/${user.username}`, {
+                          const res = await fetch(`https://finpal-1.onrender.com/transfers/${user.username}`, {
                             headers: { 'Authorization': `Bearer ${accessToken}` }
                           });
                           if (!res.ok) {

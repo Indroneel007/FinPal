@@ -77,7 +77,7 @@ export default function Location() {
     }
     setLoading(true);
     try {
-      const res = await fetch('http://localhost:9090/location', {
+      const res = await fetch('https://finpal-1.onrender.com/location', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

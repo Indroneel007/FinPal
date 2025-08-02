@@ -14,7 +14,7 @@ export default function CreateGroupModal({ open, onClose, onCreated, accessToken
     setLoading(true);
     setError('');
     try {
-      const res = await fetch('http://localhost:9090/groups', {
+      const res = await fetch('https://finpal-1.onrender.com/groups', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
