@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import CancelIcon from '@mui/icons-material/Cancel';
+import PersonAddIcon from '@mui/icons-material/PersonAdd';
 
 export default function AddMemberToGroupModal({ open, onClose, onSubmit, loading, error, group }) {
   const [username, setUsername] = useState('');
@@ -48,12 +50,12 @@ export default function AddMemberToGroupModal({ open, onClose, onSubmit, loading
             onClick={onClose}
             className="flex-1 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors"
             disabled={loading}
-          >Cancel</button>
+          > <CancelIcon style={{ marginRight: 6, fontSize: 20 }} />Cancel</button>
           <button
             type="submit"
             className="flex-1 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-bold"
             disabled={loading}
-          >{loading ? 'Adding...' : 'Add Member'}</button>
+          >{loading ? (<><PersonAddIcon style={{ marginRight: 6, fontSize: 20 }} />Adding...</>) : (<><PersonAddIcon style={{ marginRight: 6, fontSize: 20 }} />Add Member</>)}</button>
         </div>
       </form>
     </div>

@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import SendIcon from '@mui/icons-material/Send';
+import CancelIcon from '@mui/icons-material/Cancel';
 
 export default function GroupSendMoneyModal({ open, onClose, group, members, loading, error, onSubmit }) {
   const [toUsername, setToUsername] = useState('');
@@ -64,14 +66,14 @@ export default function GroupSendMoneyModal({ open, onClose, group, members, loa
                 className="py-2 px-4 bg-green-600 hover:bg-green-700 text-white rounded-lg font-bold transition-colors disabled:opacity-60"
                 disabled={submitting}
               >
-                {submitting ? 'Sending...' : 'Send Money'}
+                {submitting ? (<><SendIcon style={{ marginRight: 6, fontSize: 20 }} />Sending...</>) : (<><SendIcon style={{ marginRight: 6, fontSize: 20 }} />Send Money</>)}
               </button>
               <button
                 type="button"
                 className="py-2 px-4 bg-gray-600 hover:bg-gray-700 text-white rounded-lg font-bold transition-colors"
                 onClick={onClose}
                 disabled={submitting}
-              >Cancel</button>
+              > <CancelIcon style={{ marginRight: 6, fontSize: 20 }} />Cancel</button>
             </div>
           </form>
         )}

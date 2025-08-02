@@ -35,7 +35,9 @@ export default function GroupCard({ group, accessToken, onAction }) {
         <h3 className="text-xl font-bold text-purple-300">{group.group_name}</h3>
         <div className="flex items-center gap-2">
           <span className="text-sm text-gray-400">{group.currency} | {group.type}</span>
-          <KebabMenu options={options} />
+          <div onClick={e => e.stopPropagation()}>
+  <KebabMenu options={options} />
+</div>
         </div>
       </div>
       <button

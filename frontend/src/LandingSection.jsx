@@ -1,8 +1,10 @@
 import { motion } from 'framer-motion';
 import Prism3D from './Prism3D';
+import FeaturesSection from './FeaturesSection';
 
 export default function LandingSection() {
   return (
+    <>
     <section className="relative min-h-screen w-full overflow-x-hidden flex flex-col items-center justify-center">
       {/* Animated colorful blobs background */}
       <div className="absolute inset-0 -z-10 overflow-hidden">
@@ -46,6 +48,13 @@ export default function LandingSection() {
         Your all-in-one personal finance tracker, simplified.
       </motion.p>
 
+      {/* Features Section */}
     </section>
+    <section>
+      <div className="w-full flex justify-center">
+        <FeaturesSection />
+      </div>
+    </section>
+    </>
   );
 }

@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import CancelIcon from '@mui/icons-material/Cancel';
+import EditIcon from '@mui/icons-material/Edit';
 
 export default function UpdateGroupNameModal({ open, onClose, onSubmit, loading, error, group }) {
   const [groupname, setGroupname] = useState('');
@@ -35,12 +37,12 @@ export default function UpdateGroupNameModal({ open, onClose, onSubmit, loading,
             onClick={onClose}
             className="flex-1 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors"
             disabled={loading}
-          >Cancel</button>
+          > <CancelIcon style={{ marginRight: 6, fontSize: 20 }} />Cancel</button>
           <button
             type="submit"
             className="flex-1 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-bold"
             disabled={loading}
-          >{loading ? 'Adding...' : 'Update Name'}</button>
+          >{loading ? (<><EditIcon style={{ marginRight: 6, fontSize: 20 }} />Updating...</>) : (<><EditIcon style={{ marginRight: 6, fontSize: 20 }} />Update Name</>)}</button>
         </div>
       </form>
     </div>

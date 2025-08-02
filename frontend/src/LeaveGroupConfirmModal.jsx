@@ -1,3 +1,6 @@
+import CancelIcon from '@mui/icons-material/Cancel';
+import ExitToAppIcon from '@mui/icons-material/ExitToApp';
+
 export default function LeaveGroupConfirmModal({ open, group, loading, error, onClose, onConfirm }) {
   if (!open) return null;
   return (
@@ -14,13 +17,13 @@ export default function LeaveGroupConfirmModal({ open, group, loading, error, on
             onClick={onClose}
             className="flex-1 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors"
             disabled={loading}
-          >Cancel</button>
+          > <CancelIcon style={{ marginRight: 6, fontSize: 20 }} />Cancel</button>
           <button
             type="button"
             onClick={onConfirm}
             className="flex-1 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors font-bold"
             disabled={loading}
-          >{loading ? 'Leaving...' : 'Yes, Leave'}</button>
+          >{loading ? (<><ExitToAppIcon style={{ marginRight: 6, fontSize: 20 }} />Leaving...</>) : (<><ExitToAppIcon style={{ marginRight: 6, fontSize: 20 }} />Yes, Leave</>)}</button>
         </div>
       </div>
     </div>

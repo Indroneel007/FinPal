@@ -1,5 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 
+import MoreVertIcon from '@mui/icons-material/MoreVert';
+
 export default function KebabMenu({ options = [] }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
@@ -25,11 +27,7 @@ export default function KebabMenu({ options = [] }) {
         onClick={() => setOpen((v) => !v)}
         aria-label="Open menu"
       >
-        <svg width="24" height="24" fill="none" viewBox="0 0 24 24">
-          <circle cx="12" cy="5" r="1.5" fill="#aaa" />
-          <circle cx="12" cy="12" r="1.5" fill="#aaa" />
-          <circle cx="12" cy="19" r="1.5" fill="#aaa" />
-        </svg>
+        <MoreVertIcon style={{ color: '#aaa', fontSize: 24 }} />
       </button>
       {open && (
         <div className="absolute right-0 mt-2 w-48 bg-gray-900 border border-gray-700 rounded-lg shadow-xl z-50">
