@@ -56,7 +56,7 @@ func NewServer(store *db.Store, redisClient *redis.Client) (*Server, error) {
 
 	// CORS middleware for development - allow all origins
 	corsMiddleware := cors.New(cors.Options{
-		AllowedOrigins:   []string{"*"},
+		AllowedOrigins:   []string{"https://fin-pal.vercel.app/", "http://localhost:5173", "http://localhost:9090"},
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowedHeaders:   []string{"*"},
 		AllowCredentials: true,
