@@ -505,7 +505,7 @@ export default function MainPage() {
                       key={user.username}
                       username={user.username}
                       accessToken={accessToken}
-                      onClick={async () => {
+                      onCardClick={async () => {
                         setHistoryModal({
                           open: true,
                           username: user.username,
@@ -539,6 +539,7 @@ export default function MainPage() {
                           }));
                         }
                       }}
+                      onSendMoney={() => setTransferModal({ open: true, toUsername: user.username, loading: false, error: '' })}
                     />
                   ))
               )

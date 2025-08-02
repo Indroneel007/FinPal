@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-export default function UserTotalsCard({ username, accessToken, onClick }) {
+export default function UserTotalsCard({ username, accessToken, onCardClick, onSendMoney }) {
   const [totals, setTotals] = useState({ paid: 0, received: 0, net: 0, loading: true, error: '' });
 
   useEffect(() => {
@@ -49,7 +49,7 @@ export default function UserTotalsCard({ username, accessToken, onClick }) {
   return (
     <div 
       className="bg-gray-800 rounded-xl shadow-lg p-6 flex flex-col gap-3 border border-gray-700 hover:border-blue-500 transition-colors cursor-pointer"
-      onClick={onClick}
+      onClick={onCardClick}
     >
       <div className="flex items-center justify-between mb-2">
         <h3 className="text-xl font-bold text-blue-300">{username}</h3>
@@ -68,7 +68,7 @@ export default function UserTotalsCard({ username, accessToken, onClick }) {
       <div className="mt-3 pt-2 border-t border-gray-700">
         <button
           className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
-          onClick={e => { e.stopPropagation(); onClick && onClick(); }}
+          onClick={e => { e.stopPropagation(); onSendMoney && onSendMoney(); }}
         >
           Send Money
         </button>

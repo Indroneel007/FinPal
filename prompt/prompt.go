@@ -51,11 +51,11 @@ func BuildPrompt(data PromptData) string {
 	sb.WriteString(fmt.Sprintf("- Medical: ₹%d\n", data.StandardCosts.Medical))
 	sb.WriteString(fmt.Sprintf("- Shopping: ₹%d\n\n", data.StandardCosts.Shopping))
 
-	sb.WriteString("Based on the above, compare each category with the benchmark adjusted to the saving mindset.\n")
-	sb.WriteString("Give numerical feedback for each category, and suggestions on where the user can reduce expenses.\n")
-	sb.WriteString("Dont include any extra information or explanations. Write in less than 200 words.\n")
-	sb.WriteString("Beatuify the output with markdown. No irrelavant information. \n")
-	sb.WriteString("End with a recommendation summary.\n")
+	sb.WriteString("Based on the above, compare each category with the benchmark adjusted to the saving mindset. Dont include any extra information or explanations. Write in less than 200 words. Dont include any extra information or explanations. Only contain english letters and numbers, no symbols. \n")
+	//sb.WriteString("Give numerical feedback for each category, and suggestions on where the user can reduce expenses.\n")
+	//sb.WriteString("Dont include any extra information or explanations. Write in less than 200 words.\n")
+	//sb.WriteString("Beatuify the output with markdown. No irrelavant information. \n")
+	//sb.WriteString("End with a recommendation summary.\n")
 
 	return sb.String()
 }
