@@ -30,12 +30,12 @@ func main() {
 	viper.AutomaticEnv()
 	dbSource := viper.GetString("DBSOURCE")
 	if dbSource == "" {
-		log.Fatal("dbSource is not set in the environment variables")
+		dbSource = "postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable"
 	}
 
 	serverAddress := viper.GetString("SERVERADDRESS")
 	if serverAddress == "" {
-		log.Fatal("serverAddress is not set in the environment variables")
+		serverAddress = "https://finpal-1.onrender.com"
 	}
 
 	configCache := config.SetupRedisCache()
