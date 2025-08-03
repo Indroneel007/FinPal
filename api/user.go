@@ -225,6 +225,9 @@ func (s *Server) getOtherUser(c *gin.Context) {
 }
 
 func (s *Server) loginUser(c *gin.Context) {
+	log.Println("[loginUser] handler called")
+	// DEBUG: log every error for 500 debugging
+	log.Println("loginUser handler called")
 	/*err := godotenv.Load()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, NewError(err))
@@ -252,13 +255,16 @@ func (s *Server) loginUser(c *gin.Context) {
 	}
 
 	var req userLoginRequest
+
 	if err := c.ShouldBindJSON(&req); err != nil {
+		log.Printf("loginUser: ShouldBindJSON error: %v", err)
 		c.JSON(http.StatusBadRequest, NewError(err))
 		return
 	}
 	var field string
 	field = "username"
 
+	log.Printf("[loginUser] Login attempt for: %s", req.Username)
 	if strings.Contains(req.Username, "@") {
 		field = "email"
 	}
@@ -266,11 +272,13 @@ func (s *Server) loginUser(c *gin.Context) {
 	var user db.User
 	//var err error
 
+	log.Printf("[loginUser] Looking up user by %s", field)
 	if field == "username" {
 		user, err = s.store.GetUser(c, req.Username)
 	} else {
 		user, err = s.store.GetUserByEmail(c, req.Username)
 	}
+	log.Printf("[loginUser] DB lookup error: %v", err)
 
 	if err != nil {
 		if apiErr := convertToApiErr(err); apiErr != nil {
@@ -281,7 +289,9 @@ func (s *Server) loginUser(c *gin.Context) {
 		return
 	}
 
+	log.Println("[loginUser] Checking password hash...")
 	if !util.CheckPasswordHash(req.Password, user.HashedPassword) {
+		log.Printf("loginUser: invalid credentials for user %s", req.Username)
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid credentials"})
 		return
 	}
