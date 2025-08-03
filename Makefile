@@ -11,10 +11,10 @@ dropdb:
 	docker exec -it some-postgres dropdb simple_bank_2
 
 migrateup:
-	migrate -source file://db/migration -database "postgresql://root:rootpassword@localhost:5433/simple_bank_2?sslmode=disable" -verbose up
+	migrate -source file://db/migration -database "postgresql://finpal_postgres_user:wMJTxyATm6dtr2NGq29Vm7Eala082iEZ@dpg-d27efo6uk2gs73e30sh0-a/finpal_postgres" -verbose up
 
 migratedown:
-	migrate -source file://db/migration -database "postgresql://root:rootpassword@localhost:5433/simple_bank_2?sslmode=disable" -verbose down
+	migrate -source file://db/migration -database "postgresql://finpal_postgres_user:wMJTxyATm6dtr2NGq29Vm7Eala082iEZ@dpg-d27efo6uk2gs73e30sh0-a/finpal_postgres" -verbose down
 
 sqlc:
 	sqlc generate
