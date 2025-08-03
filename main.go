@@ -35,7 +35,7 @@ func main() {
 	}
 
 	port := os.Getenv("PORT")
-	serverAddress := ":9090" // default
+	serverAddress := ":9090" // fallback for local dev
 	if port != "" {
 		serverAddress = ":" + port
 	}
