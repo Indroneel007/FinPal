@@ -6,6 +6,7 @@ import (
 	db "examples/SimpleBankProject/db/sqlc"
 	"fmt"
 	"log"
+	"os"
 
 	"examples/SimpleBankProject/config"
 
@@ -30,12 +31,13 @@ func main() {
 	viper.AutomaticEnv()
 	dbSource := viper.GetString("DBSOURCE")
 	if dbSource == "" {
-		dbSource = "postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable"
+		dbSource = "postgresql://finpal_postgres_user:wMJTxyATm6dtr2NGq29Vm7Eala082iEZ@dpg-d27efo6uk2gs73e30sh0-a/finpal_postgres"
 	}
 
-	serverAddress := viper.GetString("SERVERADDRESS")
-	if serverAddress == "" {
-		serverAddress = "https://finpal-1.onrender.com"
+	port := os.Getenv("PORT")
+	serverAddress := ":9090" // default
+	if port != "" {
+		serverAddress = ":" + port
 	}
 
 	configCache := config.SetupRedisCache()
