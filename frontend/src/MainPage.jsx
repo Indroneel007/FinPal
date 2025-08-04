@@ -189,13 +189,13 @@ export default function MainPage() {
       <div className="flex flex-row gap-4 mt-6 mb-6 w-full">
         <div className="flex-1 flex gap-4 justify-end">
           <button
-            className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto px-5 py-2.5 rounded-lg font-semibold shadow text-white text-base sm:text-lg transition-all"
+            className="bg-green-500 hover:bg-green-700 w-full sm:w-auto px-5 py-2.5 rounded-lg font-semibold shadow text-white text-base sm:text-lg transition-all"
             onClick={() => setTransferModal({ open: true, toUsername: '', loading: false, error: '' })}
           >
             + Add User
           </button>
           <button
-            className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto px-5 py-2.5 rounded-lg font-semibold shadow text-white text-base sm:text-lg transition-all"
+            className="bg-red-600 hover:bg-blue-700 w-full sm:w-auto px-5 py-2.5 rounded-lg font-semibold shadow text-white text-base sm:text-lg transition-all"
             onClick={() => setGroupModalOpen(true)}
           >
             + Create Group
