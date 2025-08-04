@@ -140,7 +140,7 @@ export default function MainPage() {
           <h2 className="text-2xl font-bold mb-4">Invalid Access</h2>
           <p className="mb-4">Please login again to access your accounts.</p>
           <button
-            className="rainbow-btn w-full sm:w-auto font-medium rounded-lg px-5 py-2.5 text-white text-base sm:text-lg transition-all"
+            className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto font-medium rounded-lg px-5 py-2.5 text-white text-base sm:text-lg transition-all"
             onClick={() => navigate('/')}
           >
             Go to Home
@@ -189,13 +189,13 @@ export default function MainPage() {
       <div className="flex flex-row gap-4 mt-6 mb-6 w-full">
         <div className="flex-1 flex gap-4 justify-end">
           <button
-            className="rainbow-btn w-full sm:w-auto px-5 py-2.5 rounded-lg font-semibold shadow text-white text-base sm:text-lg transition-all"
+            className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto px-5 py-2.5 rounded-lg font-semibold shadow text-white text-base sm:text-lg transition-all"
             onClick={() => setTransferModal({ open: true, toUsername: '', loading: false, error: '' })}
           >
             + Add User
           </button>
           <button
-            className="rainbow-btn w-full sm:w-auto px-5 py-2.5 rounded-lg font-semibold shadow text-white text-base sm:text-lg transition-all"
+            className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto px-5 py-2.5 rounded-lg font-semibold shadow text-white text-base sm:text-lg transition-all"
             onClick={() => setGroupModalOpen(true)}
           >
             + Create Group
@@ -403,7 +403,7 @@ export default function MainPage() {
       />
       {/* Floating AI Prompt Button */}
       <button
-        className="rainbow-btn fixed left-4 top-1/2 z-40 rounded-full shadow-xl p-4 hover:scale-110 hover:shadow-2xl transition-all duration-200 border-2 border-purple-400 text-white text-2xl w-14 h-14 flex items-center justify-center"
+        className="bg-blue-600 hover:bg-blue-700 fixed left-4 top-1/2 z-40 rounded-full shadow-xl p-4 hover:scale-110 hover:shadow-2xl transition-all duration-200 border-2 border-purple-400 text-white text-2xl w-14 h-14 flex items-center justify-center"
         style={{ transform: 'translateY(-50%)' }}
         onClick={async () => {
           setPromptSidebar({ open: true, loading: true, prompt: '', error: '' });
@@ -550,7 +550,7 @@ export default function MainPage() {
       {/* Pagination Controls fixed to footer */}
       <div className="w-full fixed bottom-0 left-0 flex justify-center items-center bg-gradient-to-r from-purple-900 via-blue-900 to-gray-900 py-4 gap-4 z-10 border-t border-gray-700">
         <button
-          className="rainbow-btn px-4 py-2 rounded w-24 sm:w-32 text-white text-sm sm:text-base disabled:opacity-50"
+          className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded w-24 sm:w-32 text-white text-sm sm:text-base disabled:opacity-50"
           onClick={() => setPage((p) => Math.max(1, p - 1))}
           disabled={page === 1}
         >
@@ -558,7 +558,7 @@ export default function MainPage() {
         </button>
         <span className="text-white px-4 py-2">Page {page}</span>
         <button
-          className="rainbow-btn px-4 py-2 rounded w-24 sm:w-32 text-white text-sm sm:text-base"
+          className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded w-24 sm:w-32 text-white text-sm sm:text-base"
           onClick={() => setPage((p) => p + 1)}
           disabled={Object.keys(userTransactions).length < pageSize} 
         >
@@ -590,7 +590,7 @@ export default function MainPage() {
                 <div className="flex justify-between items-center mt-6 mb-2">
                   <h2 className="text-lg font-bold">Transaction History</h2>
                   <button
-                    className="rainbow-btn px-4 py-2 text-sm rounded w-full sm:w-auto text-white"
+                    className="bg-blue-600 hover:bg-blue-700 px-4 py-2 text-sm rounded w-full sm:w-auto text-white font-semibold transition-colors"
                     onClick={() => setTransferModal({ open: true, toUsername: historyModal.username, loading: false, error: '' })}
                   >
                     Send Money

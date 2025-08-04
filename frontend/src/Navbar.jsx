@@ -12,7 +12,7 @@ export default function Navbar({ onLogin, username, showLogin }) {
         ) : (
           showLogin && (
             <button
-              className="rainbow-btn text-white px-5 py-2 rounded-lg font-semibold shadow-md focus:ring-2 focus:ring-offset-2 focus:ring-pink-200 transition-all"
+              className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg font-semibold shadow-md focus:ring-2 focus:ring-offset-2 focus:ring-pink-200 transition-all"
               onClick={onLogin}
             >
               Login

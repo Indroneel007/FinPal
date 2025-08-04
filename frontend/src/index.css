@@ -116,16 +116,6 @@ button:focus-visible {
 .animate-gradientMoveFast { animation: gradientMoveFast 3.2s cubic-bezier(.4,0,.2,1) infinite; }
 
 
-.rainbow-btn {
-  background: linear-gradient(90deg, #ff3e3e, #ffb800, #22d3ee, #22c55e, #6366f1, #a21caf, #f472b6, #ff3e3e);
-  background-size: 300% 300%;
-  color: #fff !important;
-  transition: background-position 1s cubic-bezier(.4,0,.2,1);
-}
-.rainbow-btn:hover {
-  background-position: right center;
-  filter: brightness(1.1) saturate(1.2);
-}
 
 
 @media (prefers-color-scheme: light) {
