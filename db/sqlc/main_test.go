@@ -15,6 +15,7 @@ import (
 var testQueries *Queries
 var testDB *sql.DB
 
+// This is the test connection
 func waitForDB(dbSource string) error {
 	var db *sql.DB
 	var err error

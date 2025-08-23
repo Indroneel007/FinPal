@@ -39,7 +39,7 @@ func main() {
 	if port != "" {
 		serverAddress = ":" + port
 	}
-
+	// This is config connection
 	configCache := config.SetupRedisCache()
 
 	Client := configCache.Client
