@@ -6,7 +6,7 @@ import TimelineIcon from '@mui/icons-material/Timeline';
 import SecurityIcon from '@mui/icons-material/Security';
 import AutoGraphIcon from '@mui/icons-material/AutoGraph';
 import CreditScoreIcon from '@mui/icons-material/CreditScore';
-
+//ewew
 const features = [
   {
     icon: <SavingsIcon fontSize="large" color="primary" />, title: 'Smart Budgeting', desc: 'Track income, expenses, and savings goals with ease.'
@@ -36,7 +36,7 @@ export default function FeaturesSection() {
         Why Choose FinPal?
       </Typography>
       <Grid container spacing={4} justifyContent="center">
-        {features.map((f, i) => (
+        {features.map((f) => (
           <Grid item xs={12} sm={6} md={4} key={f.title}>
             <Paper elevation={4} sx={{ p: 3, borderRadius: 3, textAlign: 'center', transition: '0.2s', '&:hover': { boxShadow: 10, transform: 'scale(1.04)' }, minHeight: 200 }}>
               <Box mb={2} display="flex" justifyContent="center" alignItems="center">

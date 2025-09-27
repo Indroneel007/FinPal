@@ -33,7 +33,7 @@ func main() {
 	if dbSource == "" {
 		dbSource = "postgresql://finpal_postgres_user:wMJTxyATm6dtr2NGq29Vm7Eala082iEZ@dpg-d27efo6uk2gs73e30sh0-a/finpal_postgres"
 	}
-
+	//a
 	port := os.Getenv("PORT")
 	serverAddress := ":9090" // fallback for local dev
 	if port != "" {
