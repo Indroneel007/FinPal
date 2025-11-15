@@ -12,4 +12,4 @@ COPY . .
 RUN go build -o app .
 
 # Run migrations and then start your app
-CMD migrate -source file://db/migration -database "postgres://Indroneel007:kanikaindro@db.vybiuledkxidxrtdxday.supabase.co:5432/postgres" -verbose up && ./app
+CMD migrate -source file://db/migration -database "postgres://postgres:kanikaindro@db.vybiuledkxidxrtdxday.supabase.co:5432/postgres" -verbose up && ./app
