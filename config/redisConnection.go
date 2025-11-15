@@ -55,7 +55,7 @@ func SetupRedisCache() *RedisCache {
 
 	client := redis.NewClient(&redis.Options{
 		Addr:     "redis-10691.c257.us-east-1-3.ec2.cloud.redislabs.com:10691",
-		Username: "Indroneel007",
+		Username: "default",
 		Password: "SGku1ECc7k9UWA9OipVduHji3FF1kDPZ",
 		DB:       0,
 	})
