@@ -11,10 +11,10 @@ dropdb:
 	docker exec -it some-postgres dropdb simple_bank_2
 
 migrateup:
-	migrate -source file://db/migration -database "postgres://Indroneel007:Kanika%402602@db.vybiuledkxidxrtdxday.supabase.co:5432/postgres" -verbose up
+	migrate -source file://db/migration -database "postgres://Indroneel007:kanikaindro@db.vybiuledkxidxrtdxday.supabase.co:5432/postgres" -verbose up
 
 migratedown:
-	migrate -source file://db/migration -database "postgres://Indroneel007:Kanika%402602@db.vybiuledkxidxrtdxday.supabase.co:5432/postgres" -verbose down
+	migrate -source file://db/migration -database "postgres://Indroneel007:kanikaindro@db.vybiuledkxidxrtdxday.supabase.co:5432/postgres" -verbose down
 
 sqlc:
 	sqlc generate

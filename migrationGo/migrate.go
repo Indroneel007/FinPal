@@ -10,7 +10,7 @@ import (
 )
 
 func main() {
-	dbURL := "postgres://Indroneel007:Kanika%402602@db.vybiuledkxidxrtdxday.supabase.co:5432/postgres"
+	dbURL := "postgres://Indroneel007:kanikaindro@db.vybiuledkxidxrtdxday.supabase.co:5432/postgres"
 	m, err := migrate.New(
 		"file://db/migration",
 		dbURL,
