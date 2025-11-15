@@ -31,7 +31,7 @@ func main() {
 	viper.AutomaticEnv()
 	dbSource := viper.GetString("DBSOURCE")
 	if dbSource == "" {
-		dbSource = "postgresql://finpal_postgres_user:wMJTxyATm6dtr2NGq29Vm7Eala082iEZ@dpg-d27efo6uk2gs73e30sh0-a/finpal_postgres"
+		dbSource = "postgres://Indroneel007:Kanika%402602@db.vybiuledkxidxrtdxday.supabase.co:5432/postgres"
 	}
 	//a
 	port := os.Getenv("PORT")

@@ -2,7 +2,7 @@ package config
 
 import (
 	"context"
-	"fmt"
+	//"fmt"
 	"log"
 
 	//"os"
@@ -40,26 +40,27 @@ func SetupRedisCache() *RedisCache {
 	viper.AutomaticEnv()
 
 	REDIS_HOST := viper.GetString("REDIS_HOST")
-	REDIS_PORT := viper.GetString("REDIS_PORT")
+	//REDIS_PORT := viper.GetString("REDIS_PORT")
 
 	if REDIS_HOST == "" {
-		REDIS_HOST = "red-d2763u63jp1c73edni1g"
+		REDIS_HOST = "redis://default:YourPassword@your-redis-host.redis.cloud:12345"
 	}
 
-	if REDIS_PORT == "" {
-		REDIS_PORT = "6379"
-	}
+	/*opt, err := redis.ParseURL(REDIS_HOST)
+	if err != nil {
+		log.Fatalf("Invalid Redis URL: %v", err)
+	}*/
+
+	//SGku1ECc7k9UWA9OipVduHji3FF1kDPZ
 
 	client := redis.NewClient(&redis.Options{
-		Network: "tcp",
-		Addr: fmt.Sprintf(
-			"%s:%s",
-			REDIS_HOST,
-			REDIS_PORT,
-		),
+		Addr:     "redis-10691.c257.us-east-1-3.ec2.cloud.redislabs.com:10691",
+		Username: "Indroneel007",
+		Password: "SGku1ECc7k9UWA9OipVduHji3FF1kDPZ",
+		DB:       0,
 	})
 
-	redis := &RedisCache{
+	redisCache := &RedisCache{
 		Client:           client,
 		Store:            persist.NewRedisStore(client),
 		DefaultCacheTime: 10 * time.Second,
@@ -70,7 +71,7 @@ func SetupRedisCache() *RedisCache {
 		log.Fatalf("Failed to connect to Redis: %v", err)
 	}
 
-	return redis
+	return redisCache
 }
 
 func init() {
